@@ -86,6 +86,12 @@ builder.Services.AddRazorPages();
 
 var app = builder.Build();
 
+// ---------- Dev-only seed ----------
+using (var scope = app.Services.CreateScope())
+{
+    await DbInitializer.SeedAsync(scope.ServiceProvider, app.Environment);
+}
+
 // ---------- Pipeline ----------
 if (app.Environment.IsDevelopment())
 {
