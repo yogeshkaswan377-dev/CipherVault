@@ -32,6 +32,9 @@
                             <a class="nav-link" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" asp-controller="Vault" asp-action="Index">Vault</a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" asp-controller="Home" asp-action="About">About</a>
                         </li>
                         <li class="nav-item">
@@ -46,6 +49,13 @@
 
     <main class="container flex-grow-1">
         @RenderBody()
+        @if (TempData["StatusMessage"] is string msg)
+    {
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @msg
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    }
     </main>
 
     <footer class="border-top text-muted py-3 mt-4">

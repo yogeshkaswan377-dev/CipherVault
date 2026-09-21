@@ -2,6 +2,10 @@ using CipherVault.Data;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using CipherVault.Repositories;
+using CipherVault.Repositories.Contracts;
+using CipherVault.Services;
+using CipherVault.Services.Contracts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +17,10 @@ var connectionString =
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString)
 );
+
+// Phase 2 — Vault
+builder.Services.AddScoped<IVaultItemRepository, VaultItemRepository>();
+builder.Services.AddScoped<IVaultItemService, VaultItemService>();
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 

@@ -1,0 +1,20 @@
+@model CipherVault.DTOs.VaultItemDisplayDTO
+@{ ViewData["Title"] = "Delete Item"; }
+
+<h1 class="h3 mb-3 text-danger">Delete Item</h1>
+
+<div class="alert alert-warning">
+    Are you sure you want to permanently delete <strong>@Model.Title</strong>?
+    This action cannot be undone.
+</div>
+
+<dl class="row">
+    <dt class="col-sm-3">Category</dt><dd class="col-sm-9">@Model.Category</dd>
+    <dt class="col-sm-3">Username</dt><dd class="col-sm-9">@(Model.Username ?? "—")</dd>
+</dl>
+
+<form asp-action="Delete" asp-route-id="@Model.Id" method="post">
+    @Html.AntiForgeryToken()
+    <button type="submit" class="btn btn-danger">Delete</button>
+    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-link">Cancel</a>
+</form>

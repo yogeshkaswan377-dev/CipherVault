@@ -1,0 +1,45 @@
+@model IEnumerable<CipherVault.DTOs.VaultItemDisplayDTO>
+@{
+    ViewData["Title"] = "My Vault";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">My Vault</h1>
+    <a asp-action="Create" class="btn btn-primary">+ New Item</a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">Your vault is empty. <a asp-action="Create">Add your first item</a>.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Title</th><th>Category</th><th>Username</th>
+                    <th>Secret</th><th>Notes</th><th>Updated</th><th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Title</td>
+                    <td><span class="badge bg-secondary">@item.Category</span></td>
+                    <td>@(item.Username ?? "—")</td>
+                    <td><code>@item.MaskedSecret</code></td>
+                    <td>@(item.HasNotes ? "Yes" : "—")</td>
+                    <td>@item.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                    <td class="text-end">
+                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Details</a>
+                        <a asp-action="Edit"    asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                        <a asp-action="Delete"  asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">Delete</a>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
