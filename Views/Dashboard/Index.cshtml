@@ -1,11 +1,93 @@
+@model CipherVault.DTOs.DashboardStatsDTO
 @{
     ViewData["Title"] = "Dashboard";
+
+    var labels = Model.CategoryCounts.Select(c => c.Category).ToList();
+    var counts = Model.CategoryCounts.Select(c => c.Count).ToList();
 }
 
-<div class="py-4">
-    <h1>Welcome to your Vault</h1>
-    <p class="text-muted">
-        Phase 1 placeholder. In Phase 3 this page will display total item counts,
-        per-category breakdowns, and recently added items.
-    </p>
+<h2 class="mb-4">Dashboard</h2>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card text-bg-primary h-100">
+            <div class="card-body">
+                <h5 class="card-title">Total items</h5>
+                <p class="display-5 mb-0">@Model.TotalItems</p>
+            </div>
+        </div>
+    </div>
 </div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">Items by category</div>
+            <div class="card-body">
+                @if (Model.TotalItems == 0)
+                {
+                    <p class="text-muted mb-0">No items yet.</p>
+                }
+                else
+                {
+                    <canvas id="categoryChart" height="180"></canvas>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">Recently added</div>
+            <ul class="list-group list-group-flush">
+                @if (Model.RecentItems.Count == 0)
+                {
+                    <li class="list-group-item text-muted">Nothing here yet.</li>
+                }
+                else
+                {
+                    foreach (var item in Model.RecentItems)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>
+                                <strong>@item.Title</strong>
+                                <span class="badge bg-secondary ms-2">@item.Category</span>
+                            </span>
+                            <span class="text-muted small">@item.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+                        </li>
+                    }
+                }
+            </ul>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @if (Model.TotalItems > 0)
+    {
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"
+                integrity="sha384-0ACbO0j2pSlK6Wkx0kE4vBVFfqvNLtvQXblkWyBbSMnGj8mVYPK2Qv2Ld4lq4Fwb"
+                crossorigin="anonymous"></script>
+        <script>
+            (function () {
+                const ctx = document.getElementById('categoryChart');
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(labels)),
+                        datasets: [{
+                            data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(counts)),
+                            backgroundColor: [
+                                '#0d6efd', '#6610f2', '#d63384', '#fd7e14',
+                                '#198754', '#20c997', '#ffc107', '#6c757d'
+                            ]
+                        }]
+                    },
+                    options: {
+                        plugins: { legend: { position: 'bottom' } },
+                        maintainAspectRatio: false
+                    }
+                });
+            })();
+        </script>
+    }
+}

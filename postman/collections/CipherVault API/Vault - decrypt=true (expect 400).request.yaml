@@ -1,0 +1,9 @@
+$kind: http-request
+name: Vault / decrypt=true (expect 400)
+url: "{{baseUrl}}/api/v1/vault?decrypt=true"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+queryParams:
+  decrypt: "true"
+order: 8000

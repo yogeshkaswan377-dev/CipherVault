@@ -11,6 +11,7 @@ public interface IVaultItemRepository
 {
     Task<VaultItem?> GetByIdAsync(int id, CancellationToken ct = default);
     Task<IReadOnlyList<VaultItem>> GetAllByUserAsync(string userId, CancellationToken ct = default);
+    Task<IReadOnlyList<VaultItem>> SearchAsync(string userId, string? searchTerm, string? category);
     Task<int> CreateAsync(VaultItem item, CancellationToken ct = default);
     Task UpdateAsync(VaultItem item, CancellationToken ct = default);
     Task DeleteAsync(VaultItem item, CancellationToken ct = default);

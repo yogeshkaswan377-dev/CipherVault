@@ -1,0 +1,105 @@
+{
+  "info": {
+    "name": "CipherVault API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://localhost:7123" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth / Login",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"YourStrongP@ss1\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const j = pm.response.json();",
+              "if (j.accessToken) pm.collectionVariables.set('token', j.accessToken);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vault / List",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/v1/vault?search=&category="
+      }
+    },
+    {
+      "name": "Vault / Create",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/api/v1/vault",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"GitHub\",\n  \"category\": \"Password\",\n  \"username\": \"me\",\n  \"secret\": \"S3cret!\",\n  \"notes\": \"2FA enabled\",\n  \"url\": \"https://github.com\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Vault / Get by id",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/v1/vault/1"
+      }
+    },
+    {
+      "name": "Vault / Update",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/api/v1/vault/1",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"GitHub (work)\",\n  \"category\": \"Password\",\n  \"secret\": null,\n  \"notes\": null\n}"
+        }
+      }
+    },
+    {
+      "name": "Vault / Delete",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/v1/vault/1"
+      }
+    },
+    {
+      "name": "Vault / Unauthorized (expect 401, no redirect)",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/vault"
+      }
+    },
+    {
+      "name": "Vault / decrypt=true (expect 400)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/v1/vault?decrypt=true"
+      }
+    }
+  ]
+}

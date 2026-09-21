@@ -9,6 +9,12 @@ public interface IVaultItemService
         CancellationToken ct = default
     );
 
+    Task<IReadOnlyList<VaultItemDisplayDTO>> SearchItemsAsync(
+        string userId,
+        string? searchTerm,
+        string? category
+    );
+
     /// <summary>Returns null if the item does not exist OR is not owned by userId.</summary>
     Task<VaultItemDisplayDTO?> GetItemAsync(int id, string userId, CancellationToken ct = default);
 

@@ -1,5 +1,7 @@
 using CipherVault.DTOs;
+using CipherVault.Models;
 using CipherVault.Services.Contracts;
+using CipherVault.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -26,10 +28,18 @@ public class VaultController : Controller
     // -------------------------------------------------------------- Index
 
     [HttpGet]
-    public async Task<IActionResult> Index(CancellationToken ct)
+    public async Task<IActionResult> Index([FromQuery] string? search, [FromQuery] string? category)
     {
-        var items = await _vaultService.GetAllItemsAsync(CurrentUserId, ct);
-        return View(items);
+        var items = await _vaultService.SearchItemsAsync(CurrentUserId, search, category);
+
+        var vm = new VaultIndexViewModel
+        {
+            Items = items,
+            SearchTerm = search,
+            Category = category,
+            AvailableCategories = VaultCategory.All,
+        };
+        return View(vm);
     }
 
     // ------------------------------------------------------------- Create

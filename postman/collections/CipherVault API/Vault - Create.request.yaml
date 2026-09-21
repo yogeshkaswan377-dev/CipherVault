@@ -1,0 +1,19 @@
+$kind: http-request
+name: Vault / Create
+url: "{{baseUrl}}/api/v1/vault"
+method: POST
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "title": "GitHub",
+      "category": "Password",
+      "username": "me",
+      "secret": "S3cret!",
+      "notes": "2FA enabled",
+      "url": "https://github.com"
+    }
+order: 3000

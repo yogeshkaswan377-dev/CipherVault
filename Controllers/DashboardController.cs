@@ -1,18 +1,26 @@
+using CipherVault.Services.Contracts;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CipherVault.Controllers;
 
-/// <summary>
-/// Placeholder dashboard for Phase 1. Phase 3 will inject IVaultItemService
-/// to populate item counts, category breakdown, and recent items.
-/// </summary>
 [Authorize]
 public class DashboardController : Controller
 {
-    public IActionResult Index()
+    private readonly IDashboardService _dashboard;
+    private readonly UserManager<IdentityUser> _users;
+
+    public DashboardController(IDashboardService dashboard, UserManager<IdentityUser> users)
     {
-        ViewData["Title"] = "Dashboard";
-        return View();
+        _dashboard = dashboard;
+        _users = users;
+    }
+
+    public async Task<IActionResult> Index()
+    {
+        var userId = _users.GetUserId(User)!;
+        var stats = await _dashboard.GetStatsAsync(userId);
+        return View(stats);
     }
 }

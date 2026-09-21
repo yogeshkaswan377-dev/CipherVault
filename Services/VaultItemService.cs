@@ -61,6 +61,21 @@ public class VaultItemService : IVaultItemService
         return ToDisplay(item);
     }
 
+    public async Task<IReadOnlyList<VaultItemDisplayDTO>> SearchItemsAsync(
+        string userId,
+        string? searchTerm,
+        string? category
+    )
+    {
+        string? safeCategory =
+            !string.IsNullOrWhiteSpace(category) && VaultCategory.IsValid(category)
+                ? category
+                : null;
+
+        var items = await _repository.SearchAsync(userId, searchTerm, safeCategory);
+        return items.Select(ToDisplay).ToList();
+    }
+
     // ---------------------------------------------------------------- write
 
     public async Task<int> CreateItemAsync(

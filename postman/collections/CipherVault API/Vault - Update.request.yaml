@@ -1,0 +1,17 @@
+$kind: http-request
+name: Vault / Update
+url: "{{baseUrl}}/api/v1/vault/1"
+method: PUT
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "title": "GitHub (work)",
+      "category": "Password",
+      "secret": null,
+      "notes": null
+    }
+order: 5000

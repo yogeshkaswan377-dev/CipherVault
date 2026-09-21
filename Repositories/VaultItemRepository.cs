@@ -26,6 +26,32 @@ public class VaultItemRepository : IVaultItemRepository
             .OrderByDescending(v => v.UpdatedAt)
             .ToListAsync(ct);
 
+    public async Task<IReadOnlyList<VaultItem>> SearchAsync(
+        string userId,
+        string? searchTerm,
+        string? category
+    )
+    {
+        IQueryable<VaultItem> q = _db.VaultItems.AsNoTracking().Where(v => v.UserId == userId);
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = searchTerm.Trim();
+            q = q.Where(v =>
+                v.Title.Contains(term)
+                || (v.Username != null && v.Username.Contains(term))
+                || (v.Url != null && v.Url.Contains(term))
+            );
+        }
+
+        if (!string.IsNullOrWhiteSpace(category))
+        {
+            q = q.Where(v => v.Category == category);
+        }
+
+        return await q.OrderByDescending(v => v.UpdatedAt).ToListAsync();
+    }
+
     public async Task<int> CreateAsync(VaultItem item, CancellationToken ct = default)
     {
         _db.VaultItems.Add(item);

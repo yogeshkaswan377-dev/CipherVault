@@ -1,0 +1,10 @@
+$kind: http-request
+name: Vault / List
+url: "{{baseUrl}}/api/v1/vault?search=&category="
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+queryParams:
+  search: ""
+  category: ""
+order: 2000

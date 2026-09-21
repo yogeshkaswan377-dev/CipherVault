@@ -1,0 +1,5 @@
+$kind: http-request
+name: Vault / Unauthorized (expect 401, no redirect)
+url: "{{baseUrl}}/api/v1/vault"
+method: GET
+order: 7000

@@ -1,11 +1,14 @@
+using System.Text;
 using CipherVault.Data;
-using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using CipherVault.Repositories;
 using CipherVault.Repositories.Contracts;
 using CipherVault.Services;
 using CipherVault.Services.Contracts;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,6 +50,54 @@ builder
         options.User.RequireUniqueEmail = true;
     })
     .AddEntityFrameworkStores<ApplicationDbContext>();
+
+// --- Existing AddDefaultIdentity (unchanged) ---
+
+// Explicit scheme separation: cookie for MVC, Bearer for API.
+// AddAuthentication() with no arguments extends the AuthenticationBuilder
+// created by AddDefaultIdentity — it does NOT replace the Identity cookies.
+builder
+    .Services.AddAuthentication()
+    .AddJwtBearer(
+        JwtBearerDefaults.AuthenticationScheme,
+        options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                ValidAudience = builder.Configuration["Jwt:Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes(
+                        builder.Configuration["Jwt:Key"]
+                            ?? throw new InvalidOperationException(
+                                "Jwt:Key is not configured. Set it via user-secrets (dev) or the Jwt__Key environment variable (prod)."
+                            )
+                    )
+                ),
+                ClockSkew = TimeSpan.FromMinutes(1),
+            };
+            // Do not redirect API requests to a login page.
+            options.Events = new JwtBearerEvents
+            {
+                OnChallenge = ctx =>
+                {
+                    // Suppress the default redirect-to-login behaviour; return 401.
+                    ctx.HandleResponse();
+                    ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    ctx.Response.ContentType = "application/json";
+                    return ctx.Response.WriteAsync("{\"error\":\"unauthorized\"}");
+                },
+            };
+        }
+    );
+
+// Phase 3 services
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 // ---------- Cookie authentication ----------
 builder.Services.ConfigureApplicationCookie(options =>
@@ -108,8 +159,13 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
-}
+
+    if (app.Environment.IsProduction())
+    {
+        app.Logger.LogInformation("HSTS middleware enabled for Production.");
+        app.UseHsts();
+    }
+}   
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
