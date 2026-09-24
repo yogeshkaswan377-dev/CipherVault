@@ -1,67 +1,180 @@
 @model CipherVault.ViewModels.VaultIndexViewModel
+@using CipherVault.Helpers
 @{
     ViewData["Title"] = "My Vault";
 }
 
-<h2 class="mb-3">My Vault</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">
+        <i class="bi bi-shield-lock-fill text-accent"></i> My Vault
+    </h1>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> New Item
+    </a>
+</div>
 
-<form method="get" asp-action="Index" class="row g-2 mb-4">
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle"></i> @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@* ---------- Filter bar ---------- *@
+<form method="get" asp-action="Index" class="row g-2 mb-4 vault-filter-bar">
     <div class="col-md-6">
-        <input type="text" name="search" value="@Model.SearchTerm" class="form-control"
-               placeholder="Search title, username, or URL…" />
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" name="search" value="@Model.Search" class="form-control"
+                   placeholder="Search title, username, or URL..." autocomplete="off" />
+        </div>
     </div>
     <div class="col-md-4">
         <select name="category" class="form-select">
-            <option value="">All categories</option>
-            @foreach (var c in Model.AvailableCategories)
+            <option value="">-- All Categories --</option>
+            @foreach (var cat in new[] { "Password", "Note", "API Key", "Credit Card", "Other" })
             {
-                <option value="@c" selected="@(c == Model.Category)">@c</option>
+                <option value="@cat" selected="@(cat == Model.Category)">@cat</option>
             }
         </select>
     </div>
-    <div class="col-md-2 d-flex gap-2">
-        <button type="submit" class="btn btn-primary flex-fill">Search</button>
-        <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+    <div class="col-md-2 d-grid">
+        <button type="submit" class="btn btn-outline-light">
+            <i class="bi bi-funnel"></i> Filter
+        </button>
     </div>
 </form>
 
-@if (!Model.Items.Any())
+@* ---------- Empty state ---------- *@
+@if (Model.Items.Count == 0)
 {
-    <div class="alert alert-info">Your vault is empty. <a asp-action="Create">Add your first item</a>.</div>
+    <div class="text-center py-5 vault-empty-state">
+        <i class="bi bi-inbox" style="font-size: 3.5rem; opacity: 0.5;"></i>
+        <h5 class="mt-3">No items found</h5>
+        <p class="text-muted">
+            @if (string.IsNullOrWhiteSpace(Model.Search) && string.IsNullOrWhiteSpace(Model.Category))
+            {
+                <span>Your vault is empty. </span>
+                <a asp-action="Create">Create your first item</a>
+            }
+            else
+            {
+                <span>Try clearing the filters or </span>
+                <a asp-action="Index">reset search</a>
+            }
+        </p>
+    </div>
 }
 else
 {
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
+    <div class="table-responsive vault-table-wrap">
+        <table class="table table-hover align-middle vault-table">
             <thead>
                 <tr>
+                    <th style="width: 44px;"></th>
                     <th>Title</th>
                     <th>Category</th>
                     <th>Username</th>
                     <th>Secret</th>
-                    <th>Notes</th>
                     <th>Updated</th>
-                    <th class="text-end">Actions</th>
+                    <th class="text-end" style="width: 130px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var item in Model.Items)
                 {
                     <tr>
-                        <td>@item.Title</td>
-                        <td><span class="badge bg-secondary">@item.Category</span></td>
-                        <td>@(item.Username ?? "—")</td>
-                        <td><code>@item.MaskedSecret</code></td>
-                        <td>@(item.HasNotes ? "Yes" : "—")</td>
-                        <td>@item.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                        <td class="text-center">
+                            <i class="bi @VaultCategoryIcons.For(item.Category) text-accent"></i>
+                        </td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@item.Id" class="fw-semibold vault-link">@item.Title</a>
+                        </td>
+                        <td><span class="badge vault-badge">@item.Category</span></td>
+                        <td class="text-truncate" style="max-width: 180px;">
+                            @{
+                                var username = string.IsNullOrWhiteSpace(item.Username) ? "-" : item.Username;
+                            }
+                            @username
+                        </td>
+                        <td><code class="vault-mask">@item.MaskedSecret</code></td>
+                        <td class="text-muted small">@item.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                         <td class="text-end">
-                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Details</a>
-                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
-                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">Delete</a>
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </a>
                         </td>
                     </tr>
                 }
             </tbody>
         </table>
     </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        const int windowSize = 2;
+        int startPage = Math.Max(1, Model.Page - windowSize);
+        int endPage = Math.Min(Model.TotalPages, Model.Page + windowSize);
+
+        <nav aria-label="Vault pagination" class="mt-3">
+            <ul class="pagination justify-content-center">
+
+                <li class="page-item @(Model.HasPrevious ? "" : "disabled")">
+                    <a class="page-link" asp-action="Index" asp-route-search="@Model.Search"
+                       asp-route-category="@Model.Category" asp-route-page="@(Model.Page - 1)" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+
+                @if (startPage > 1)
+                {
+                    <li class="page-item">
+                        <a class="page-link" asp-action="Index" asp-route-search="@Model.Search"
+                           asp-route-category="@Model.Category" asp-route-page="1">1</a>
+                    </li>
+                    if (startPage > 2)
+                    {
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    }
+                }
+
+                @for (int i = startPage; i <= endPage; i++)
+                {
+                    <li class="page-item @(i == Model.Page ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-search="@Model.Search"
+                           asp-route-category="@Model.Category" asp-route-page="@i">@i</a>
+                    </li>
+                }
+
+                @if (endPage < Model.TotalPages)
+                {
+                    if (endPage < Model.TotalPages - 1)
+                    {
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    }
+                    <li class="page-item">
+                        <a class="page-link" asp-action="Index" asp-route-search="@Model.Search"
+                           asp-route-category="@Model.Category" asp-route-page="@Model.TotalPages">@Model.TotalPages</a>
+                    </li>
+                }
+
+                <li class="page-item @(Model.HasNext ? "" : "disabled")">
+                    <a class="page-link" asp-action="Index" asp-route-search="@Model.Search"
+                       asp-route-category="@Model.Category" asp-route-page="@(Model.Page + 1)" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+
+            </ul>
+        </nav>
+
+        <p class="text-center text-muted small">
+            Showing <strong>@Model.FirstItemOnPage</strong>-<strong>@Model.LastItemOnPage</strong>
+            of <strong>@Model.TotalCount</strong> items
+        </p>
+    }
 }

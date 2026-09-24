@@ -1,8 +1,25 @@
-bin/
-obj/
-.vs/
+# ---- CipherVault ----
+# Data Protection keys — MUST NEVER be committed
+App_Data/keys/
+App_Data/
+
+# Development-only secrets
+appsettings.Development.json
+appsettings.Local.json
+
+# Publish output
+published/
+publish/
+
+# User secrets
 *.user
 *.suo
-App_Data/keys/
-*.pfx
-secrets.json
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+*.user
+
+# Build artifacts (default dotnet gitignore already covers most)
+bin/
+obj/

@@ -20,6 +20,10 @@ public class VaultItemService : IVaultItemService
 
     private const string Mask = "••••••••";
 
+    private const int MinPageSize = 1;
+    private const int MaxPageSize = 100;
+    private const int DefaultPageSize = 10;
+
     private readonly IVaultItemRepository _repository;
     private readonly IDataProtector _secretProtector;
     private readonly IDataProtector _notesProtector;
@@ -75,6 +79,72 @@ public class VaultItemService : IVaultItemService
         var items = await _repository.SearchAsync(userId, searchTerm, safeCategory);
         return items.Select(ToDisplay).ToList();
     }
+
+    public async Task<(List<VaultItemDisplayDTO> Items, int TotalCount)> SearchItemsPagedAsync(
+        string userId,
+        string? search,
+        string? category,
+        int page,
+        int pageSize
+    )
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+            return (new List<VaultItemDisplayDTO>(), 0);
+
+        // --- Clamp (business rule — belongs in service, NOT controller) ---
+        if (page < 1)
+            page = 1;
+        if (pageSize < MinPageSize)
+            pageSize = DefaultPageSize;
+        if (pageSize > MaxPageSize)
+            pageSize = MaxPageSize;
+
+        // --- Whitelist category so caller can't smuggle arbitrary strings ---
+        string? safeCategory = null;
+        if (!string.IsNullOrWhiteSpace(category) && VaultCategory.IsValid(category))
+        {
+            safeCategory = category;
+        }
+
+        var skip = (page - 1) * pageSize;
+
+        var (items, totalCount) = await _repository.SearchPagedAsync(
+            userId,
+            search,
+            safeCategory,
+            skip,
+            pageSize
+        );
+
+        // Map to display DTOs — NO decryption happens on list paths.
+        var dtos = items.Select(MapToDisplayDto).ToList();
+
+        // Audit trail — no values, no user input echo
+        _logger.LogInformation(
+            "Vault search performed. UserId={UserId} Page={Page} PageSize={PageSize} Total={Total}",
+            userId,
+            page,
+            pageSize,
+            totalCount
+        );
+
+        return (dtos, totalCount);
+    }
+
+    // Adjust this to match your existing private mapper name/shape.
+    private static VaultItemDisplayDTO MapToDisplayDto(VaultItem item) =>
+        new()
+        {
+            Id = item.Id,
+            Title = item.Title,
+            Category = item.Category,
+            Username = item.Username,
+            Url = item.Url,
+            CreatedAt = item.CreatedAt,
+            UpdatedAt = item.UpdatedAt,
+            MaskedSecret = "••••••••", // fixed mask — never plaintext
+            HasNotes = !string.IsNullOrEmpty(item.EncryptedNotes),
+        };
 
     // ---------------------------------------------------------------- write
 

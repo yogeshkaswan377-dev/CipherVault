@@ -1,5 +1,6 @@
 using System.Text;
 using CipherVault.Data;
+using CipherVault.Middleware;
 using CipherVault.Repositories;
 using CipherVault.Repositories.Contracts;
 using CipherVault.Services;
@@ -51,9 +52,7 @@ builder
     })
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
-// --- Existing AddDefaultIdentity (unchanged) ---
-
-// Explicit scheme separation: cookie for MVC, Bearer for API.
+// --- Explicit scheme separation: cookie for MVC, Bearer for API ---
 // AddAuthentication() with no arguments extends the AuthenticationBuilder
 // created by AddDefaultIdentity — it does NOT replace the Identity cookies.
 builder
@@ -131,7 +130,27 @@ builder.Services.ConfigureApplicationCookie(options =>
 // ---------- Data Protection (persistent key ring) ----------
 // The path is configurable via "DataProtection:KeyDirectory" in appsettings.json
 // or environment variable DataProtection__KeyDirectory.
-var keyDirectory = builder.Configuration["DataProtection:KeyDirectory"] ?? "App_Data/keys";
+// ---------- Data Protection (persistent key ring) ----------
+// Rules:
+//   Development : empty/missing -> fallback to App_Data/keys
+//   Production  : empty/missing -> HARD FAIL. Silent fallback to a relative
+//                 path could put keys in a non-persistent or web-exposed
+//                 folder, making ciphertext unrecoverable after restart.
+var keyDirectory = builder.Configuration["DataProtection:KeyDirectory"];
+
+if (string.IsNullOrWhiteSpace(keyDirectory))
+{
+    if (builder.Environment.IsProduction())
+    {
+        throw new InvalidOperationException(
+            "DataProtection:KeyDirectory must be set in Production. "
+                + "Set the environment variable DataProtection__KeyDirectory to a "
+                + "persistent, writable path OUTSIDE the web root."
+        );
+    }
+    keyDirectory = "App_Data/keys";
+}
+
 Directory.CreateDirectory(keyDirectory);
 
 builder
@@ -158,25 +177,34 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseExceptionHandler("/Home/Error");
+    // Custom global exception middleware.
+    //   - /api/* paths  -> JSON 500 {"error":"internal_server_error"}
+    //   - MVC paths     -> re-executed to /Home/HttpError?code=500
+    // Replaces the built-in UseExceptionHandler so there is exactly one handler.
+    app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-    if (app.Environment.IsProduction())
-    {
-        app.Logger.LogInformation("HSTS middleware enabled for Production.");
-        app.UseHsts();
-    }
-}   
+    // Custom error pages for MVC paths only (404, 403, etc.).
+    // API paths keep their bare status codes so JSON clients can parse them.
+    app.UseWhen(
+        ctx => !ctx.Request.Path.StartsWithSegments("/api"),
+        branch =>
+        {
+            branch.UseStatusCodePagesWithReExecute("/Home/HttpError", "?code={0}");
+        }
+    );
+}
+
+if (app.Environment.IsProduction())
+{
+    app.UseHsts();
+}
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
-
-app.MapRazorPages(); // Default Identity UI endpoints
+app.MapRazorPages();
 
 app.Run();

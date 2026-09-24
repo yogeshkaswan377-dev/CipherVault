@@ -14,10 +14,12 @@
     "Production": {
       "commandName": "Project",
       "dotnetRunMessages": true,
-      "launchBrowser": false,
+      "launchBrowser": true,
       "applicationUrl": "https://localhost:7123;http://localhost:5123",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Production"
+        "ASPNETCORE_ENVIRONMENT": "Production",
+        "ConnectionStrings__DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=CipherVaultDb;Trusted_Connection=True;MultipleActiveResultSets=true",
+        "DataProtection__KeyDirectory": "C:\\xampp\\htdocs\\CipherVault\\App_Data\\keys"
       }
     }
   }

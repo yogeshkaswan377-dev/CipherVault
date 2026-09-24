@@ -1,6 +1,10 @@
 @model CipherVault.DTOs.VaultItemDisplayDTO
 @{
     ViewData["Title"] = Model.Title;
+
+    // Notes placeholder — DTO only exposes MaskedSecret, so use a fixed mask
+    // to avoid leaking length information about the notes.
+    const string MaskedNotes = "••••••••••••";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -15,112 +19,148 @@
 <div class="card mb-4">
     <div class="card-body">
         <dl class="row mb-0">
-            <dt class="col-sm-3">Category</dt><dd class="col-sm-9">@Model.Category</dd>
-            <dt class="col-sm-3">Username</dt><dd class="col-sm-9">@(Model.Username ?? "—")</dd>
+            <dt class="col-sm-3">Category</dt>
+            <dd class="col-sm-9">@Model.Category</dd>
+            <dt class="col-sm-3">Username</dt>
+            <dd class="col-sm-9">@(string.IsNullOrWhiteSpace(Model.Username) ? "—" : Model.Username)</dd>
             <dt class="col-sm-3">URL</dt>
             <dd class="col-sm-9">
                 @if (!string.IsNullOrWhiteSpace(Model.Url))
                 {
                     <a href="@Model.Url" target="_blank" rel="noopener noreferrer">@Model.Url</a>
                 }
-                else { <text>—</text> }
+                else
+                {
+                    <text>—</text>
+                }
             </dd>
-            <dt class="col-sm-3">Created</dt><dd class="col-sm-9">@Model.CreatedAt.ToLocalTime()</dd>
-            <dt class="col-sm-3">Updated</dt><dd class="col-sm-9">@Model.UpdatedAt.ToLocalTime()</dd>
+            <dt class="col-sm-3">Created</dt>
+            <dd class="col-sm-9">@Model.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</dd>
+            <dt class="col-sm-3">Updated</dt>
+            <dd class="col-sm-9">@Model.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</dd>
         </dl>
     </div>
 </div>
 
-@* One anti-forgery token is enough for all fetch calls on this page. *@
+@* Single anti-forgery token used by all reveal fetch calls on this page. *@
 <form id="af-token" class="d-none">@Html.AntiForgeryToken()</form>
 
+@* ---------- Secret ---------- *@
 <div class="mb-4">
-    <label class="form-label fw-semibold">Secret</label>
+    <label class="form-label fw-semibold" for="secret-value">Secret</label>
     <div class="input-group">
-        <input type="text" class="form-control font-monospace"
-               id="secret-value" value="@Model.MaskedSecret" readonly />
-        <button type="button" class="btn btn-outline-warning js-reveal"
-                data-url="@Url.Action("RevealSecret", new { id = Model.Id })"
-                data-target="secret-value"
-                data-mask="@Model.MaskedSecret">Reveal</button>
+        <input type="text" id="secret-value" class="form-control font-monospace" value="@Model.MaskedSecret"
+               data-masked="@Model.MaskedSecret" data-revealed="false" readonly />
+
+        <button type="button" id="btnRevealSecret" class="btn btn-outline-primary js-reveal" data-target="secret-value"
+                data-url="@Url.Action("RevealSecret", "Vault", new { id = Model.Id })">
+            <i class="bi bi-eye"></i> Reveal
+        </button>
+
+        <button type="button" id="btnCopySecret" class="btn btn-outline-secondary" data-copy-target="#secret-value"
+                disabled>
+            <i class="bi bi-clipboard"></i> Copy
+        </button>
     </div>
 </div>
 
+@* ---------- Notes ---------- *@
 @if (Model.HasNotes)
 {
     <div class="mb-4">
-        <label class="form-label fw-semibold">Notes</label>
+        <label class="form-label fw-semibold" for="notes-value">Notes</label>
         <div class="input-group">
-            <textarea class="form-control font-monospace" id="notes-value" rows="3" readonly>@Model.MaskedSecret</textarea>
-            <button type="button" class="btn btn-outline-warning js-reveal"
-                    data-url="@Url.Action("RevealNotes", new { id = Model.Id })"
-                    data-target="notes-value"
-                    data-mask="@Model.MaskedSecret">Reveal</button>
+            <textarea id="notes-value" class="form-control font-monospace" rows="4" data-masked="@MaskedNotes"
+                      data-revealed="false" readonly>@MaskedNotes</textarea>
+
+            <button type="button" id="btnRevealNotes" class="btn btn-outline-primary js-reveal" data-target="notes-value"
+                    data-url="@Url.Action("RevealNotes", "Vault", new { id = Model.Id })">
+                <i class="bi bi-eye"></i> Reveal
+            </button>
+
+            <button type="button" id="btnCopyNotes" class="btn btn-outline-secondary" data-copy-target="#notes-value"
+                    disabled>
+                <i class="bi bi-clipboard"></i> Copy
+            </button>
         </div>
     </div>
 }
 
 @section Scripts {
-<script>
-(function () {
-    'use strict';
-    const AUTO_HIDE_MS = 30000;
+    <script src="~/js/clipboard.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            'use strict';
+            const AUTO_HIDE_MS = 30000;
 
-    function getToken() {
-        const el = document.querySelector('#af-token input[name="__RequestVerificationToken"]');
-        return el ? el.value : '';
-    }
-
-    document.querySelectorAll('.js-reveal').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const target = document.getElementById(btn.dataset.target);
-            const masked = btn.dataset.mask;
-
-            // Toggle back to masked state.
-            if (btn.dataset.revealed === 'true') {
-                target.value = masked;
-                btn.dataset.revealed = 'false';
-                btn.textContent = 'Reveal';
-                btn.classList.remove('btn-warning');
-                btn.classList.add('btn-outline-warning');
-                if (btn._timer) clearTimeout(btn._timer);
-                return;
+            function getToken() {
+                const el = document.querySelector('#af-token input[name="__RequestVerificationToken"]');
+                return el ? el.value : '';
             }
 
-            btn.disabled = true;
-            try {
-                const body = new URLSearchParams();
-                body.append('__RequestVerificationToken', getToken());
+            function setRevealed(el, revealed, plaintext) {
+                el.setAttribute('data-revealed', revealed ? 'true' : 'false');
+                if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+                    el.value = revealed ? plaintext : el.getAttribute('data-masked');
+                } else {
+                    el.textContent = revealed ? plaintext : el.getAttribute('data-masked');
+                }
+            }
 
-                const res = await fetch(btn.dataset.url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body
+            function updateButtonLabel(btn, revealed) {
+                const icon = revealed ? 'bi-eye-slash' : 'bi-eye';
+                const label = revealed ? 'Hide' : 'Reveal';
+                btn.innerHTML = '<i class="bi ' + icon + '"></i> ' + label;
+                btn.classList.toggle('btn-outline-primary', !revealed);
+                btn.classList.toggle('btn-warning', revealed);
+            }
+
+            document.querySelectorAll('.js-reveal').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const target = document.getElementById(btn.dataset.target);
+                    if (!target) return;
+
+                    // --- Hide (toggle back) ---
+                    if (target.getAttribute('data-revealed') === 'true') {
+                        setRevealed(target, false, null);
+                        updateButtonLabel(btn, false);
+                        if (btn._timer) clearTimeout(btn._timer);
+                        return;
+                    }
+
+                    // --- Reveal ---
+                    btn.disabled = true;
+                    try {
+                        const body = new URLSearchParams();
+                        body.append('__RequestVerificationToken', getToken());
+
+                        const res = await fetch(btn.dataset.url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body
+                        });
+
+                        if (!res.ok) {
+                            alert('Unable to reveal value.');
+                            return;
+                        }
+
+                        const data = await res.json();
+                        setRevealed(target, true, data.value);
+                        updateButtonLabel(btn, true);
+
+                        // Auto-hide after 30s
+                        btn._timer = setTimeout(() => {
+                            setRevealed(target, false, null);
+                            updateButtonLabel(btn, false);
+                        }, AUTO_HIDE_MS);
+                    } catch {
+                        alert('Network error while revealing value.');
+                    } finally {
+                        btn.disabled = false;
+                    }
                 });
-
-                if (!res.ok) { alert('Unable to reveal value.'); return; }
-
-                const data = await res.json();
-                target.value = data.value;
-                btn.dataset.revealed = 'true';
-                btn.textContent = 'Hide';
-                btn.classList.remove('btn-outline-warning');
-                btn.classList.add('btn-warning');
-
-                btn._timer = setTimeout(() => {
-                    target.value = masked;
-                    btn.dataset.revealed = 'false';
-                    btn.textContent = 'Reveal';
-                    btn.classList.remove('btn-warning');
-                    btn.classList.add('btn-outline-warning');
-                }, AUTO_HIDE_MS);
-            } catch {
-                alert('Network error while revealing value.');
-            } finally {
-                btn.disabled = false;
-            }
-        });
-    });
-})();
-</script>
+            });
+        })();
+    </script>
 }

@@ -27,19 +27,35 @@ public class VaultController : Controller
 
     // -------------------------------------------------------------- Index
 
-    [HttpGet]
-    public async Task<IActionResult> Index([FromQuery] string? search, [FromQuery] string? category)
+    [Authorize]
+    public async Task<IActionResult> Index(
+        string? search = null,
+        string? category = null,
+        int page = 1,
+        int pageSize = 10
+    )
     {
-        var items = await _vaultService.SearchItemsAsync(CurrentUserId, search, category);
+        var userId = CurrentUserId; // Phase 1 se available property
 
-        var vm = new VaultIndexViewModel
+        var (items, totalCount) = await _vaultService.SearchItemsPagedAsync(
+            userId,
+            search,
+            category,
+            page,
+            pageSize
+        );
+
+        var model = new VaultIndexViewModel
         {
             Items = items,
-            SearchTerm = search,
+            Search = search,
             Category = category,
-            AvailableCategories = VaultCategory.All,
+            Page = page < 1 ? 1 : page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
         };
-        return View(vm);
+
+        return View(model);
     }
 
     // ------------------------------------------------------------- Create

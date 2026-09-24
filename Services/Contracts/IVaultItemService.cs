@@ -15,6 +15,14 @@ public interface IVaultItemService
         string? category
     );
 
+    Task<(List<VaultItemDisplayDTO> Items, int TotalCount)> SearchItemsPagedAsync(
+        string userId,
+        string? search,
+        string? category,
+        int page,
+        int pageSize
+    );
+
     /// <summary>Returns null if the item does not exist OR is not owned by userId.</summary>
     Task<VaultItemDisplayDTO?> GetItemAsync(int id, string userId, CancellationToken ct = default);
 
