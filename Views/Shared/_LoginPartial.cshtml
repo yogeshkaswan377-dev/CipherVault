@@ -2,28 +2,35 @@
 @inject SignInManager<IdentityUser> SignInManager
 @inject UserManager<IdentityUser> UserManager
 
-<ul class="navbar-nav">
-    @if (SignInManager.IsSignedIn(User))
-    {
-        <li class="nav-item">
-            <span class="navbar-text text-light me-3">
-                Hello, @UserManager.GetUserName(User)!
-            </span>
-        </li>
-        <li class="nav-item">
-            <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout"
-                  asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" method="post">
-                <button type="submit" class="btn btn-outline-light btn-sm">Logout</button>
-            </form>
-        </li>
-    }
-    else
-    {
-        <li class="nav-item">
-            <a class="nav-link" asp-area="Identity" asp-page="/Account/Register">Register</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" asp-area="Identity" asp-page="/Account/Login">Login</a>
-        </li>
-    }
-</ul>
+@if (SignInManager.IsSignedIn(User))
+{
+    var user = await UserManager.GetUserAsync(User);
+    var initial = !string.IsNullOrEmpty(user?.Email)
+        ? user!.Email!.Substring(0, 1).ToUpperInvariant()
+        : "?";
+
+    <div class="sidebar-user">
+        <span class="user-avatar">@initial</span>
+        <div class="user-info">
+            <span class="user-name">@User.Identity?.Name</span>
+            <span class="user-role">Vault Owner</span>
+        </div>
+        <form class="user-logout" asp-area="Identity" asp-page="/Account/Logout"
+              asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+            <button type="submit" class="btn-icon-ghost" title="Logout">
+                <i class="bi bi-box-arrow-right"></i>
+            </button>
+        </form>
+    </div>
+}
+else
+{
+    <div class="sidebar-auth">
+        <a class="btn btn-primary w-100 mb-2" asp-area="Identity" asp-page="/Account/Login">
+            <i class="bi bi-box-arrow-in-right"></i> Login
+        </a>
+        <a class="btn btn-outline-secondary w-100" asp-area="Identity" asp-page="/Account/Register">
+            <i class="bi bi-person-plus"></i> Register
+        </a>
+    </div>
+}

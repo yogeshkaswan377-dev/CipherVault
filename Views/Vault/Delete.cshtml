@@ -1,20 +1,111 @@
 @model CipherVault.DTOs.VaultItemDisplayDTO
-@{ ViewData["Title"] = "Delete Item"; }
+@using CipherVault.Helpers
+@{
+    ViewData["Title"] = "Delete Item";
+}
 
-<h1 class="h3 mb-3 text-danger">Delete Item</h1>
+<div class="form-page">
 
-<div class="alert alert-warning">
-    Are you sure you want to permanently delete <strong>@Model.Title</strong>?
-    This action cannot be undone.
+    <a asp-action="Details" asp-route-id="@Model.Id" class="details-back">
+        <i class="bi bi-arrow-left"></i>
+        <span>Back to Item</span>
+    </a>
+
+    <div class="form-page-header">
+        <h1 style="color: var(--danger);">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            Delete Item
+        </h1>
+        <span class="subtitle">
+            This action is permanent and cannot be undone.
+        </span>
+    </div>
+
+    @* ---------- Warning banner ---------- *@
+    <div class="delete-warning">
+        <div class="delete-warning-icon">
+            <i class="bi bi-trash-fill"></i>
+        </div>
+        <div class="delete-warning-body">
+            <h3>You're about to delete this item</h3>
+            <p>
+                The encrypted secret and notes will be permanently removed from the database.
+                There is no recycle bin, no undo, and no way to recover this data.
+            </p>
+        </div>
+    </div>
+
+    @* ---------- Item preview ---------- *@
+    <section class="details-section">
+        <header class="details-section-header">
+            <span class="details-section-title">
+                <i class="bi @VaultCategoryIcons.For(Model.Category)"></i>
+                <span>Item to be deleted</span>
+            </span>
+            <span class="badge badge-category" data-category="@Model.Category">
+                @Model.Category
+            </span>
+        </header>
+
+        <div class="details-section-body">
+            <div class="delete-preview">
+                <div class="delete-preview-icon" data-category="@Model.Category">
+                    <i class="bi @VaultCategoryIcons.For(Model.Category)"></i>
+                </div>
+                <div class="delete-preview-info">
+                    <div class="delete-preview-title">@Model.Title</div>
+                    @if (!string.IsNullOrWhiteSpace(Model.Username))
+                    {
+                        <div class="delete-preview-meta">
+                            <i class="bi bi-person"></i> @Model.Username
+                        </div>
+                    }
+                    <div class="delete-preview-meta">
+                        <i class="bi bi-clock"></i>
+                        Last updated @Model.UpdatedAt.ToLocalTime().ToString("MMM dd, yyyy")
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    @* ---------- Confirmation form ---------- *@
+    <form asp-action="Delete" method="post">
+        <input type="hidden" name="id" value="@Model.Id" />
+
+        <section class="details-section">
+            <div class="details-section-body">
+                <label class="delete-confirm">
+                    <input type="checkbox" id="confirm-delete" required />
+                    <span>
+                        I understand this will permanently delete the item and cannot be undone.
+                    </span>
+                </label>
+            </div>
+        </section>
+
+        <div class="form-actions">
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-ghost">
+                <i class="bi bi-x-lg"></i> Cancel
+            </a>
+            <button type="submit" id="btn-delete" class="btn btn-danger" disabled>
+                <i class="bi bi-trash"></i> Delete Permanently
+            </button>
+        </div>
+    </form>
 </div>
 
-<dl class="row">
-    <dt class="col-sm-3">Category</dt><dd class="col-sm-9">@Model.Category</dd>
-    <dt class="col-sm-3">Username</dt><dd class="col-sm-9">@(Model.Username ?? "—")</dd>
-</dl>
+@section Scripts {
+    <script>
+        (function () {
+            'use strict';
+            const check = document.getElementById('confirm-delete');
+            const btn = document.getElementById('btn-delete');
+            if (!check || !btn) return;
 
-<form asp-action="Delete" asp-route-id="@Model.Id" method="post">
-    @Html.AntiForgeryToken()
-    <button type="submit" class="btn btn-danger">Delete</button>
-    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-link">Cancel</a>
-</form>
+            check.addEventListener('change', () => {
+                btn.disabled = !check.checked;
+            });
+        })();
+    </script>
+}

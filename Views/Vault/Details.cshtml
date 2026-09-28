@@ -1,90 +1,178 @@
 @model CipherVault.DTOs.VaultItemDisplayDTO
+@using CipherVault.Helpers
 @{
     ViewData["Title"] = Model.Title;
 
-    // Notes placeholder — DTO only exposes MaskedSecret, so use a fixed mask
-    // to avoid leaking length information about the notes.
-    const string MaskedNotes = "••••••••••••";
+    var maskedNotes = "••••••••••••••••";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3 mb-0">@Model.Title</h1>
-    <div>
-        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Edit</a>
-        <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger">Delete</a>
-        <a asp-action="Index" class="btn btn-link">Back</a>
+@* Hidden anti-forgery token for reveal fetch calls *@
+<form id="af-token" class="d-none">@Html.AntiForgeryToken()</form>
+
+<a asp-action="Index" class="details-back">
+    <i class="bi bi-arrow-left"></i>
+    <span>Back to Vault</span>
+</a>
+
+@* ---------- Title row ---------- *@
+<div class="details-title-row">
+    <div class="details-title">
+        <span class="details-title-icon" data-category="@Model.Category">
+            <i class="bi @VaultCategoryIcons.For(Model.Category)"></i>
+        </span>
+        <div class="details-title-text">
+            <h1>@Model.Title</h1>
+            <span class="subtitle">
+                <span class="badge badge-category" data-category="@Model.Category">
+                    @Model.Category
+                </span>
+                <span>·</span>
+                <span>Updated @Model.UpdatedAt.ToLocalTime().ToString("MMM dd, yyyy")</span>
+            </span>
+        </div>
+    </div>
+
+    <div class="details-actions">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-light">
+            <i class="bi bi-pencil"></i> Edit
+        </a>
+        <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger">
+            <i class="bi bi-trash"></i> Delete
+        </a>
     </div>
 </div>
 
-<div class="card mb-4">
-    <div class="card-body">
-        <dl class="row mb-0">
-            <dt class="col-sm-3">Category</dt>
-            <dd class="col-sm-9">@Model.Category</dd>
-            <dt class="col-sm-3">Username</dt>
-            <dd class="col-sm-9">@(string.IsNullOrWhiteSpace(Model.Username) ? "—" : Model.Username)</dd>
-            <dt class="col-sm-3">URL</dt>
-            <dd class="col-sm-9">
-                @if (!string.IsNullOrWhiteSpace(Model.Url))
+@* ---------- Two-column layout ---------- *@
+<div class="details-layout">
+
+    @* ============ MAIN COLUMN ============ *@
+    <div>
+
+        @* ---------- Secret section ---------- *@
+        <section class="details-section">
+            <header class="details-section-header">
+                <span class="details-section-title">
+                    <i class="bi bi-shield-lock-fill"></i>
+                    <span>Secret</span>
+                </span>
+                <span class="badge badge-category" data-category="Password">Encrypted</span>
+            </header>
+
+            <div class="details-section-body">
+                <div class="secret-field">
+                    <div id="secret-value" class="secret-display is-masked" data-masked="@Model.MaskedSecret"
+                         data-revealed="false">
+                        <i class="bi bi-shield-lock-fill"></i>
+                        <span class="value">@Model.MaskedSecret</span>
+                    </div>
+                </div>
+
+                <div class="field-actions">
+                    <button type="button" id="btnRevealSecret" class="btn btn-outline-warning js-reveal"
+                            data-target="secret-value"
+                            data-url="@Url.Action("RevealSecret", "Vault", new { id = Model.Id })">
+                        <i class="bi bi-eye"></i> Reveal
+                    </button>
+
+                    <button type="button" id="btnCopySecret" class="btn btn-outline-light"
+                            data-copy-target="#secret-value" disabled>
+                        <i class="bi bi-clipboard"></i> Copy
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        @* ---------- Notes section ---------- *@
+        @if (Model.HasNotes)
+        {
+            <section class="details-section">
+                <header class="details-section-header">
+                    <span class="details-section-title">
+                        <i class="bi bi-journal-text"></i>
+                        <span>Notes</span>
+                    </span>
+                    <span class="badge badge-category" data-category="Note">Encrypted</span>
+                </header>
+
+                <div class="details-section-body">
+                    <div id="notes-value" class="notes-display is-masked" data-masked="@maskedNotes" data-revealed="false">
+                        @maskedNotes
+                    </div>
+
+                    <div class="field-actions mt-3">
+                        <button type="button" id="btnRevealNotes" class="btn btn-outline-warning js-reveal"
+                                data-target="notes-value" data-url="@Url.Action("RevealNotes", "Vault", new { id = Model.Id })">
+                            <i class="bi bi-eye"></i> Reveal
+                        </button>
+
+                        <button type="button" id="btnCopyNotes" class="btn btn-outline-light"
+                                data-copy-target="#notes-value" disabled>
+                            <i class="bi bi-clipboard"></i> Copy
+                        </button>
+                    </div>
+                </div>
+            </section>
+        }
+
+    </div>
+
+    @* ============ SIDEBAR ============ *@
+    <aside class="details-meta">
+        <div class="details-meta-header">
+            <i class="bi bi-info-circle"></i>
+            <span>Item Details</span>
+        </div>
+
+        <ul class="details-meta-list">
+
+            <li>
+                <span class="meta-label">Category</span>
+                <span class="meta-value">@Model.Category</span>
+            </li>
+
+            <li>
+                <span class="meta-label">Username</span>
+                @if (!string.IsNullOrWhiteSpace(Model.Username))
                 {
-                    <a href="@Model.Url" target="_blank" rel="noopener noreferrer">@Model.Url</a>
+                    <span class="meta-value">@Model.Username</span>
                 }
                 else
                 {
-                    <text>—</text>
+                    <span class="meta-value is-muted">Not set</span>
                 }
-            </dd>
-            <dt class="col-sm-3">Created</dt>
-            <dd class="col-sm-9">@Model.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</dd>
-            <dt class="col-sm-3">Updated</dt>
-            <dd class="col-sm-9">@Model.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</dd>
-        </dl>
-    </div>
+            </li>
+
+            <li>
+                <span class="meta-label">URL</span>
+                @if (!string.IsNullOrWhiteSpace(Model.Url))
+                {
+                    <span class="meta-value">
+                        <a href="@Model.Url" target="_blank" rel="noopener noreferrer">
+                            @Model.Url
+                            <i class="bi bi-box-arrow-up-right" style="font-size: 0.72em; margin-left: 2px;"></i>
+                        </a>
+                    </span>
+                }
+                else
+                {
+                    <span class="meta-value is-muted">Not set</span>
+                }
+            </li>
+
+            <li>
+                <span class="meta-label">Created</span>
+                <span class="meta-value">@Model.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy 'at' HH:mm")</span>
+            </li>
+
+            <li>
+                <span class="meta-label">Last Updated</span>
+                <span class="meta-value">@Model.UpdatedAt.ToLocalTime().ToString("MMM dd, yyyy 'at' HH:mm")</span>
+            </li>
+
+        </ul>
+    </aside>
+
 </div>
-
-@* Single anti-forgery token used by all reveal fetch calls on this page. *@
-<form id="af-token" class="d-none">@Html.AntiForgeryToken()</form>
-
-@* ---------- Secret ---------- *@
-<div class="mb-4">
-    <label class="form-label fw-semibold" for="secret-value">Secret</label>
-    <div class="input-group">
-        <input type="text" id="secret-value" class="form-control font-monospace" value="@Model.MaskedSecret"
-               data-masked="@Model.MaskedSecret" data-revealed="false" readonly />
-
-        <button type="button" id="btnRevealSecret" class="btn btn-outline-primary js-reveal" data-target="secret-value"
-                data-url="@Url.Action("RevealSecret", "Vault", new { id = Model.Id })">
-            <i class="bi bi-eye"></i> Reveal
-        </button>
-
-        <button type="button" id="btnCopySecret" class="btn btn-outline-secondary" data-copy-target="#secret-value"
-                disabled>
-            <i class="bi bi-clipboard"></i> Copy
-        </button>
-    </div>
-</div>
-
-@* ---------- Notes ---------- *@
-@if (Model.HasNotes)
-{
-    <div class="mb-4">
-        <label class="form-label fw-semibold" for="notes-value">Notes</label>
-        <div class="input-group">
-            <textarea id="notes-value" class="form-control font-monospace" rows="4" data-masked="@MaskedNotes"
-                      data-revealed="false" readonly>@MaskedNotes</textarea>
-
-            <button type="button" id="btnRevealNotes" class="btn btn-outline-primary js-reveal" data-target="notes-value"
-                    data-url="@Url.Action("RevealNotes", "Vault", new { id = Model.Id })">
-                <i class="bi bi-eye"></i> Reveal
-            </button>
-
-            <button type="button" id="btnCopyNotes" class="btn btn-outline-secondary" data-copy-target="#notes-value"
-                    disabled>
-                <i class="bi bi-clipboard"></i> Copy
-            </button>
-        </div>
-    </div>
-}
 
 @section Scripts {
     <script src="~/js/clipboard.js" asp-append-version="true"></script>
@@ -100,10 +188,12 @@
 
             function setRevealed(el, revealed, plaintext) {
                 el.setAttribute('data-revealed', revealed ? 'true' : 'false');
-                if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
-                    el.value = revealed ? plaintext : el.getAttribute('data-masked');
+                if (revealed) {
+                    el.classList.remove('is-masked');
+                    el.textContent = plaintext;
                 } else {
-                    el.textContent = revealed ? plaintext : el.getAttribute('data-masked');
+                    el.classList.add('is-masked');
+                    el.textContent = el.getAttribute('data-masked');
                 }
             }
 
@@ -111,7 +201,7 @@
                 const icon = revealed ? 'bi-eye-slash' : 'bi-eye';
                 const label = revealed ? 'Hide' : 'Reveal';
                 btn.innerHTML = '<i class="bi ' + icon + '"></i> ' + label;
-                btn.classList.toggle('btn-outline-primary', !revealed);
+                btn.classList.toggle('btn-outline-warning', !revealed);
                 btn.classList.toggle('btn-warning', revealed);
             }
 
@@ -120,7 +210,7 @@
                     const target = document.getElementById(btn.dataset.target);
                     if (!target) return;
 
-                    // --- Hide (toggle back) ---
+                    // --- Toggle back to masked ---
                     if (target.getAttribute('data-revealed') === 'true') {
                         setRevealed(target, false, null);
                         updateButtonLabel(btn, false);
@@ -128,7 +218,7 @@
                         return;
                     }
 
-                    // --- Reveal ---
+                    // --- Fetch plaintext ---
                     btn.disabled = true;
                     try {
                         const body = new URLSearchParams();
@@ -146,7 +236,8 @@
                         }
 
                         const data = await res.json();
-                        setRevealed(target, true, data.value);
+                        const plaintext = data.value ?? data.secret ?? data.notes ?? '';
+                        setRevealed(target, true, plaintext);
                         updateButtonLabel(btn, true);
 
                         // Auto-hide after 30s
@@ -154,7 +245,8 @@
                             setRevealed(target, false, null);
                             updateButtonLabel(btn, false);
                         }, AUTO_HIDE_MS);
-                    } catch {
+                    } catch (err) {
+                        console.error('[reveal] error', err);
                         alert('Network error while revealing value.');
                     } finally {
                         btn.disabled = false;

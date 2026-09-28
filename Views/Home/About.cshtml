@@ -1,16 +1,95 @@
 @{
     ViewData["Title"] = "About";
 }
-<h1>@ViewData["Title"]</h1>
-<p>
-    CipherVault stores passwords, API keys, credit-card details, and secure notes
-    using ASP.NET Core Data Protection. All confidential content is encrypted before
-    being written to the database; only non-sensitive metadata is stored in plaintext
-    to allow search and filtering.
-</p>
-<p class="text-danger">
-    <strong>Security disclaimer:</strong> This is an educational/student project.
-    It must not be marketed as a production-grade password manager unless its
-    cryptographic design, key management, authentication, and deployment configuration
-    have been independently audited.
-</p>
+
+<div class="info-page">
+
+    <div class="info-hero">
+        <div class="info-hero-icon">
+            <i class="bi bi-shield-lock-fill"></i>
+        </div>
+        <h1>About CipherVault</h1>
+        <p>
+            A personal encrypted password &amp; secure notes manager built on
+            ASP.NET Core 10 — a demonstration of real encryption at rest, ownership-scoped
+            access, and modern web security practices.
+        </p>
+    </div>
+
+    @* ---------- What it does ---------- *@
+    <section class="info-section">
+        <h2 class="info-section-title">
+            <i class="bi bi-lightning-charge-fill"></i>
+            <span>What it does</span>
+        </h2>
+
+        <div class="info-features">
+            <article class="info-feature">
+                <div class="info-feature-icon"><i class="bi bi-shield-lock-fill"></i></div>
+                <h4>Encrypted storage</h4>
+                <p>Secrets and notes are encrypted with the Data Protection API before touching the database.</p>
+            </article>
+
+            <article class="info-feature">
+                <div class="info-feature-icon"><i class="bi bi-eye-slash-fill"></i></div>
+                <h4>Reveal on demand</h4>
+                <p>Values stay masked by default. Reveal decrypts for the current session, then auto-hides.</p>
+            </article>
+
+            <article class="info-feature">
+                <div class="info-feature-icon"><i class="bi bi-shuffle"></i></div>
+                <h4>Secure generator</h4>
+                <p>Cryptographically secure password generation using <code>crypto.getRandomValues()</code>.</p>
+            </article>
+
+            <article class="info-feature">
+                <div class="info-feature-icon"><i class="bi bi-code-slash"></i></div>
+                <h4>REST API</h4>
+                <p>Full CRUD API with JWT bearer auth. Secrets are never returned via the API.</p>
+            </article>
+        </div>
+    </section>
+
+    @* ---------- Tech stack ---------- *@
+    <section class="info-section">
+        <h2 class="info-section-title">
+            <i class="bi bi-stack"></i>
+            <span>Built with</span>
+        </h2>
+
+        <div class="info-stack">
+            <span class="info-pill"><i class="bi bi-filetype-cs"></i> ASP.NET Core 10</span>
+            <span class="info-pill"><i class="bi bi-database"></i> EF Core 10</span>
+            <span class="info-pill"><i class="bi bi-server"></i> SQL Server</span>
+            <span class="info-pill"><i class="bi bi-person-badge"></i> Identity</span>
+            <span class="info-pill"><i class="bi bi-key"></i> Data Protection</span>
+            <span class="info-pill"><i class="bi bi-bootstrap"></i> Bootstrap 5</span>
+            <span class="info-pill"><i class="bi bi-shield-check"></i> JWT Bearer</span>
+        </div>
+    </section>
+
+    @* ---------- Security notice ---------- *@
+    <section class="info-section">
+        <h2 class="info-section-title">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>Security notice</span>
+        </h2>
+
+        <div class="info-callout">
+            <div class="info-callout-icon">
+                <i class="bi bi-shield-exclamation"></i>
+            </div>
+            <div class="info-callout-body">
+                <h4>Educational project</h4>
+                <p>
+                    CipherVault is a student/learning project and must not be marketed as a
+                    production-grade password manager unless its cryptographic design, key
+                    management, authentication, and deployment configuration have been
+                    independently audited. Do not store high-value secrets (banking
+                    credentials, recovery phrases, government IDs) without a security review.
+                </p>
+            </div>
+        </div>
+    </section>
+
+</div>

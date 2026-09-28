@@ -4,64 +4,158 @@
     ViewData["Title"] = "Register";
 }
 
-<h1>@ViewData["Title"]</h1>
+<div class="auth-page">
 
-<div class="row">
-    <div class="col-md-4">
-        <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
-            <h2>Create a new account.</h2>
-            <hr />
-            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                <label asp-for="Input.Email">Email</label>
-                <span asp-validation-for="Input.Email" class="text-danger"></span>
+    @* ============ Brand Panel (Left) ============ *@
+    <aside class="auth-brand">
+        <div class="auth-brand-inner">
+            <div class="auth-brand-icon">
+                <i class="bi bi-shield-lock-fill"></i>
             </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label asp-for="Input.Password">Password</label>
-                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            <h1 class="auth-brand-title">Create your CipherVault</h1>
+            <p class="auth-brand-tagline">
+                A personal encrypted vault for your passwords, API keys, and secure notes.
+            </p>
+            <ul class="auth-brand-features">
+                <li>
+                    <i class="bi bi-lock-fill"></i>
+                    <span>Strong passwords required — enforced by policy</span>
+                </li>
+                <li>
+                    <i class="bi bi-shield-check"></i>
+                    <span>Account lockout after 5 failed attempts</span>
+                </li>
+                <li>
+                    <i class="bi bi-key-fill"></i>
+                    <span>Everything encrypted before it hits the database</span>
+                </li>
+                <li>
+                    <i class="bi bi-code-slash"></i>
+                    <span>Free and open for personal use</span>
+                </li>
+            </ul>
+        </div>
+    </aside>
+
+    @* ============ Form Panel (Right) ============ *@
+    <div class="auth-form-wrap">
+        <div class="auth-form">
+
+            <div class="auth-form-header">
+                <h2>Create account</h2>
+                <p>Choose a strong password. It protects your vault access.</p>
             </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label asp-for="Input.ConfirmPassword">Confirm Password</label>
-                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
-            </div>
-            <button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
-        </form>
-    </div>
-    <div class="col-md-6 col-md-offset-2">
-        <section>
-            <h3>Use another service to register.</h3>
-            <hr />
-            @{
-                if ((Model.ExternalLogins?.Count ?? 0) == 0)
-                {
-                    <div>
-                        <p>
-                            There are no external authentication services configured. See this <a href="https://go.microsoft.com/fwlink/?LinkID=532715">article
-                            about setting up this ASP.NET application to support logging in via external services</a>.
-                        </p>
-                    </div>
-                }
-                else
-                {
-                    <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="form-horizontal">
-                        <div>
-                            <p>
-                                @foreach (var provider in Model.ExternalLogins!)
-                                {
-                                    <button type="submit" class="btn btn-primary" name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">@provider.DisplayName</button>
-                                }
-                            </p>
+
+            <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                <div class="auth-form-body">
+
+                    @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <div asp-validation-summary="ModelOnly"></div>
                         </div>
-                    </form>
-                }
-            }
-        </section>
+                    }
+
+                    <div class="auth-field">
+                        <label asp-for="Input.Email">Email</label>
+                        <input asp-for="Input.Email" class="form-control" type="email" autocomplete="username"
+                               placeholder="you@example.com" autofocus />
+                        <span asp-validation-for="Input.Email" class="text-danger"></span>
+                    </div>
+
+                    <div class="auth-field">
+                        <label asp-for="Input.Password">Password</label>
+                        <div class="auth-password-wrap">
+                            <input asp-for="Input.Password" id="register-password" class="form-control" type="password"
+                                   autocomplete="new-password" placeholder="At least 8 characters" />
+                            <button type="button" id="toggle-register-password" class="input-action" tabindex="-1"
+                                    title="Show / hide password">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+
+                        <div class="auth-strength" id="register-strength" data-strength="0">
+                            <div class="seg"></div>
+                            <div class="seg"></div>
+                            <div class="seg"></div>
+                            <div class="seg"></div>
+                        </div>
+
+                        <span asp-validation-for="Input.Password" class="text-danger"></span>
+
+                        <div class="auth-hint">
+                            Must contain uppercase, lowercase, digit, and a special character.
+                        </div>
+                    </div>
+
+                    <div class="auth-field">
+                        <label asp-for="Input.ConfirmPassword">Confirm password</label>
+                        <div class="auth-password-wrap">
+                            <input asp-for="Input.ConfirmPassword" id="confirm-password" class="form-control"
+                                   type="password" autocomplete="new-password" placeholder="Re-enter your password" />
+                            <button type="button" id="toggle-confirm-password" class="input-action" tabindex="-1"
+                                    title="Show / hide password">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+                    </div>
+
+                    <button id="register-submit" type="submit" class="btn btn-primary auth-submit">
+                        <i class="bi bi-person-plus"></i> Create account
+                    </button>
+
+                </div>
+            </form>
+
+            <div class="auth-footer">
+                Already have an account?
+                <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">Sign in</a>
+            </div>
+
+        </div>
     </div>
+
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            'use strict';
+
+            function wireToggle(inputId, btnId) {
+                const input = document.getElementById(inputId);
+                const btn = document.getElementById(btnId);
+                if (!input || !btn) return;
+                btn.addEventListener('click', () => {
+                    const isPwd = input.type === 'password';
+                    input.type = isPwd ? 'text' : 'password';
+                    btn.innerHTML = isPwd
+                        ? '<i class="bi bi-eye-slash"></i>'
+                        : '<i class="bi bi-eye"></i>';
+                });
+            }
+
+            wireToggle('register-password', 'toggle-register-password');
+            wireToggle('confirm-password', 'toggle-confirm-password');
+
+            // Password strength meter
+            const pwd = document.getElementById('register-password');
+            const meter = document.getElementById('register-strength');
+            if (pwd && meter) {
+                pwd.addEventListener('input', () => {
+                    const v = pwd.value;
+                    let score = 0;
+                    if (v.length >= 8) score++;
+                    if (v.length >= 12) score++;
+                    if (/[a-z]/.test(v) && /[A-Z]/.test(v)) score++;
+                    if (/\d/.test(v)) score++;
+                    if (/[^A-Za-z0-9]/.test(v)) score++;
+                    meter.setAttribute('data-strength', Math.min(score, 4));
+                });
+            }
+        })();
+    </script>
 }

@@ -1,5 +1,205 @@
 ﻿@{
     ViewData["Title"] = "Privacy Policy";
+    var lastUpdated = "September 28, 2026";
 }
-<h1>@ViewData["Title"]</h1>
-<p>No personal data is shared with third parties. All vault content is encrypted at rest.</p>
+
+<div class="privacy-page">
+
+    <div class="privacy-hero">
+        <div class="privacy-hero-icon">
+            <i class="bi bi-shield-lock-fill"></i>
+        </div>
+        <h1>Privacy Policy</h1>
+        <span class="updated">
+            <i class="bi bi-clock-history"></i>
+            Last updated @lastUpdated
+        </span>
+    </div>
+
+    @* ---------- 1. Overview ---------- *@
+    <section class="privacy-section">
+        <h2 class="privacy-section-title">
+            <span class="num">01</span>
+            <span>Overview</span>
+        </h2>
+        <p>
+            CipherVault is a personal password and secure notes manager.
+            This policy explains what data the application stores about you, how that
+            data is protected, and what it does <strong>not</strong> do.
+        </p>
+        <p>
+            The application is an educational/student project. It does not use
+            analytics, tracking pixels, third-party cookies, or advertising networks.
+        </p>
+    </section>
+
+    @* ---------- 2. What we store ---------- *@
+    <section class="privacy-section">
+        <h2 class="privacy-section-title">
+            <span class="num">02</span>
+            <span>What we store</span>
+        </h2>
+        <p>
+            When you register and use CipherVault, the following data is stored in the
+            application's database:
+        </p>
+
+        <table class="privacy-table">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Storage</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Email address</td>
+                    <td><span class="plain"><i class="bi bi-exclamation-triangle-fill"></i> Plaintext</span> — required
+                        for login</td>
+                    </tr>
+                    <tr>
+                        <td>Account password</td>
+                        <td><span class="encrypted"><i class="bi bi-shield-fill-check"></i> Salted hash</span> — never
+                            recoverable</td>
+                        </tr>
+                        <tr>
+                            <td>Vault item — Secret</td>
+                            <td><span class="encrypted"><i class="bi bi-shield-fill-check"></i> Encrypted</span> — Data
+                                Protection API</td>
+                            </tr>
+                            <tr>
+                                <td>Vault item — Notes</td>
+                                <td><span class="encrypted"><i class="bi bi-shield-fill-check"></i> Encrypted</span> — Data
+                                    Protection API</td>
+                                </tr>
+                                <tr>
+                                    <td>Vault metadata</td>
+                                    <td><span class="plain"><i class="bi bi-exclamation-triangle-fill"></i> Plaintext</span> — title,
+                                        username, URL, category, timestamps</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Audit events</td>
+                                        <td>Action type, user ID, item ID, timestamp — <strong>no values</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div class="privacy-callout">
+                                <div class="privacy-callout-icon">
+                                    <i class="bi bi-info-circle-fill"></i>
+                                </div>
+                                <div class="privacy-callout-body">
+                                    <h4>Why is metadata plaintext?</h4>
+                                    <p>
+                                        Titles, usernames, and URLs need to stay readable so the server can
+                                        search and filter your vault. Secrets and notes are the sensitive parts
+                                        — those are always encrypted.
+                                    </p>
+                                </div>
+                            </div>
+                        </section>
+
+                        @* ---------- 3. How encryption works ---------- *@
+                        <section class="privacy-section">
+                            <h2 class="privacy-section-title">
+                                <span class="num">03</span>
+                                <span>How encryption works</span>
+                            </h2>
+                            <p>
+                                CipherVault uses the <strong>ASP.NET Core Data Protection API</strong> to
+                                encrypt secrets and notes before they are written to the database. Two
+                                purpose-scoped keys are used:
+                            </p>
+                            <ul class="privacy-list">
+                                <li><strong>CipherVault.Secret</strong> — for the Secret field of a vault item</li>
+                                <li><strong>CipherVault.Notes</strong> — for the Notes field of a vault item</li>
+                            </ul>
+                            <p>
+                                The encryption keys live in a persistent key ring on the server — they are
+                                <strong>not</strong> derived from your account password. This means the
+                                server can decrypt your secrets when you ask it to (e.g. when you click
+                                <em>Reveal</em>). If you require a zero-knowledge model where the server
+                                cannot read your data, CipherVault is not the right tool.
+                            </p>
+                        </section>
+
+                        @* ---------- 4. What we don't do ---------- *@
+                        <section class="privacy-section">
+                            <h2 class="privacy-section-title">
+                                <span class="num">04</span>
+                                <span>What we don't do</span>
+                            </h2>
+                            <ul class="privacy-list">
+                                <li>We don't use analytics or tracking scripts</li>
+                                <li>We don't embed third-party ads or trackers</li>
+                                <li>We don't send marketing emails</li>
+                                <li>We don't share your data with third parties</li>
+                                <li>We don't log plaintext secrets, notes, or decrypted values</li>
+                                <li>We don't include secrets in URLs, error messages, or query strings</li>
+                                <li>We don't sell or trade any user information</li>
+                            </ul>
+                        </section>
+
+                        @* ---------- 5. Your control ---------- *@
+                        <section class="privacy-section">
+                            <h2 class="privacy-section-title">
+                                <span class="num">05</span>
+                                <span>Your control over your data</span>
+                            </h2>
+                            <ul class="privacy-list">
+                                <li><strong>Edit any item</strong> — update title, secret, notes, or metadata at any time</li>
+                                <li><strong>Delete any item</strong> — permanent; there is no recycle bin</li>
+                                <li><strong>Log out</strong> — ends your session immediately</li>
+                                <li><strong>Delete account</strong> — contact the administrator; cascades to all your items</li>
+                            </ul>
+                        </section>
+
+                        @* ---------- 6. Security disclaimer ---------- *@
+                        <section class="privacy-section">
+                            <h2 class="privacy-section-title">
+                                <span class="num">06</span>
+                                <span>Security disclaimer</span>
+                            </h2>
+                            <div class="privacy-callout">
+                                <div class="privacy-callout-icon">
+                                    <i class="bi bi-shield-exclamation"></i>
+                                </div>
+                                <div class="privacy-callout-body">
+                                    <h4>Educational project — not audited</h4>
+                                    <p>
+                                        CipherVault is a student/learning project. It has not been
+                                        independently security-audited. Do not store high-value secrets
+                                        (banking credentials, recovery phrases, government IDs) without an
+                                        independent review. Data Protection key storage on shared hosting
+                                        may not provide OS-level protection — keys are stored as files and
+                                        must be backed up and access-restricted.
+                                    </p>
+                                </div>
+                            </div>
+                        </section>
+
+                        @* ---------- 7. Contact ---------- *@
+                        <section class="privacy-section">
+                            <h2 class="privacy-section-title">
+                                <span class="num">07</span>
+                                <span>Contact</span>
+                            </h2>
+                            <p>
+                                Questions about this policy?
+                                Visit the <a asp-controller="Home" asp-action="Contact">Contact page</a>
+                                or email <a href="mailto:hello@ciphervault.local">hello@ciphervault.local</a>.
+                            </p>
+                            <p>
+                                For security issues, email
+                                <a href="mailto:security@ciphervault.local">security@ciphervault.local</a>
+                                — please do not open public issues for vulnerabilities.
+                            </p>
+                        </section>
+
+                        <div class="privacy-footer-note">
+                            This privacy policy is provided for an educational project and does not
+                            constitute legal advice. Replace this section with your own policy before any
+                            real-world deployment.
+                        </div>
+
+                    </div>

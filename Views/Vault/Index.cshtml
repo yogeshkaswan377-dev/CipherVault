@@ -2,12 +2,21 @@
 @using CipherVault.Helpers
 @{
     ViewData["Title"] = "My Vault";
+
+    // Pagination window — computed once, used below.
+    const int windowSize = 2;
+    int startPage = Math.Max(1, Model.Page - windowSize);
+    int endPage = Math.Min(Model.TotalPages, Model.Page + windowSize);
+    if (Model.TotalPages < 1) { startPage = 1; endPage = 1; }
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="mb-0">
-        <i class="bi bi-shield-lock-fill text-accent"></i> My Vault
-    </h1>
+<div class="page-header">
+    <div>
+        <h1><i class="bi bi-key-fill"></i> My Vault</h1>
+        <span class="page-subtitle">
+            @Model.TotalCount item@(Model.TotalCount == 1 ? "" : "s") in your encrypted vault
+        </span>
+    </div>
     <a asp-action="Create" class="btn btn-primary">
         <i class="bi bi-plus-lg"></i> New Item
     </a>
@@ -16,117 +25,149 @@
 @if (TempData["Success"] != null)
 {
     <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="bi bi-check-circle"></i> @TempData["Success"]
+        <i class="bi bi-check-circle"></i>
+        <span>@TempData["Success"]</span>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 }
 
-@* ---------- Filter bar ---------- *@
-<form method="get" asp-action="Index" class="row g-2 mb-4 vault-filter-bar">
-    <div class="col-md-6">
-        <div class="input-group">
-            <span class="input-group-text"><i class="bi bi-search"></i></span>
-            <input type="text" name="search" value="@Model.Search" class="form-control"
-                   placeholder="Search title, username, or URL..." autocomplete="off" />
-        </div>
+@* ---------- Toolbar: search + filter ---------- *@
+<form method="get" asp-action="Index" class="vault-toolbar">
+    <div class="vault-search">
+        <i class="bi bi-search"></i>
+        <input type="text" name="search" value="@Model.Search" class="form-control"
+               placeholder="Search title, username, or URL..." autocomplete="off" />
     </div>
-    <div class="col-md-4">
-        <select name="category" class="form-select">
-            <option value="">-- All Categories --</option>
-            @foreach (var cat in new[] { "Password", "Note", "API Key", "Credit Card", "Other" })
-            {
-                <option value="@cat" selected="@(cat == Model.Category)">@cat</option>
-            }
-        </select>
-    </div>
-    <div class="col-md-2 d-grid">
+
+    <select name="category" class="form-select vault-filter">
+        <option value="">All Categories</option>
+        @foreach (var cat in new[] { "Password", "Note", "API Key", "Credit Card", "Other" })
+        {
+            <option value="@cat" selected="@(cat == Model.Category)">@cat</option>
+        }
+    </select>
+
+    <div class="vault-filter-actions">
         <button type="submit" class="btn btn-outline-light">
             <i class="bi bi-funnel"></i> Filter
         </button>
+        @if (!string.IsNullOrWhiteSpace(Model.Search) || !string.IsNullOrWhiteSpace(Model.Category))
+        {
+            <a asp-action="Index" class="btn btn-ghost" title="Clear filters">
+                <i class="bi bi-x-lg"></i>
+            </a>
+        }
     </div>
+
+    <span class="vault-toolbar-count">
+        @Model.TotalCount item@(Model.TotalCount == 1 ? "" : "s")
+    </span>
 </form>
 
-@* ---------- Empty state ---------- *@
+@* ---------- Results ---------- *@
 @if (Model.Items.Count == 0)
 {
-    <div class="text-center py-5 vault-empty-state">
-        <i class="bi bi-inbox" style="font-size: 3.5rem; opacity: 0.5;"></i>
-        <h5 class="mt-3">No items found</h5>
-        <p class="text-muted">
-            @if (string.IsNullOrWhiteSpace(Model.Search) && string.IsNullOrWhiteSpace(Model.Category))
-            {
-                <span>Your vault is empty. </span>
-                <a asp-action="Create">Create your first item</a>
-            }
-            else
-            {
-                <span>Try clearing the filters or </span>
-                <a asp-action="Index">reset search</a>
-            }
-        </p>
+    <div class="vault-empty">
+        <div class="vault-empty-icon">
+            <i
+            class="bi @(string.IsNullOrWhiteSpace(Model.Search) && string.IsNullOrWhiteSpace(Model.Category) ? "bi-shield-lock" : "bi-search")"></i>
+        </div>
+
+        @if (string.IsNullOrWhiteSpace(Model.Search) && string.IsNullOrWhiteSpace(Model.Category))
+        {
+            <h3>Your vault is empty</h3>
+            <p>Start by adding your first encrypted item. Secrets are encrypted before they ever hit the database.</p>
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Create your first item
+            </a>
+        }
+        else
+        {
+            <h3>No items match your filters</h3>
+            <p>Try a different search term or clear the filters to see everything.</p>
+            <a asp-action="Index" class="btn btn-outline-light">
+                <i class="bi bi-x-lg"></i> Clear filters
+            </a>
+        }
     </div>
 }
 else
 {
-    <div class="table-responsive vault-table-wrap">
-        <table class="table table-hover align-middle vault-table">
-            <thead>
-                <tr>
-                    <th style="width: 44px;"></th>
-                    <th>Title</th>
-                    <th>Category</th>
-                    <th>Username</th>
-                    <th>Secret</th>
-                    <th>Updated</th>
-                    <th class="text-end" style="width: 130px;">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model.Items)
-                {
-                    <tr>
-                        <td class="text-center">
-                            <i class="bi @VaultCategoryIcons.For(item.Category) text-accent"></i>
-                        </td>
-                        <td>
-                            <a asp-action="Details" asp-route-id="@item.Id" class="fw-semibold vault-link">@item.Title</a>
-                        </td>
-                        <td><span class="badge vault-badge">@item.Category</span></td>
-                        <td class="text-truncate" style="max-width: 180px;">
-                            @{
-                                var username = string.IsNullOrWhiteSpace(item.Username) ? "-" : item.Username;
-                            }
-                            @username
-                        </td>
-                        <td><code class="vault-mask">@item.MaskedSecret</code></td>
-                        <td class="text-muted small">@item.UpdatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
-                        <td class="text-end">
-                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary" title="Edit">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger" title="Delete">
-                                <i class="bi bi-trash"></i>
-                            </a>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+    <div class="vault-grid">
+        @foreach (var item in Model.Items)
+        {
+            <article class="vault-card">
+
+                @* ----- Header: icon + actions menu ----- *@
+                <div class="vault-card-header">
+                    <span class="vault-card-icon" data-category="@item.Category">
+                        <i class="bi @VaultCategoryIcons.For(item.Category)"></i>
+                    </span>
+
+                    <div class="vault-card-menu">
+                        <a asp-action="Details" asp-route-id="@item.Id" class="btn-icon" title="View details">
+                            <i class="bi bi-eye-fill"></i>
+                        </a>
+                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn-icon" title="Edit">
+                            <i class="bi bi-pencil-fill"></i>
+                        </a>
+                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn-icon btn-icon-danger" title="Delete">
+                            <i class="bi bi-trash-fill"></i>
+                        </a>
+                    </div>
+                </div>
+
+                @* ----- Body: title + username + secret ----- *@
+                <div class="vault-card-body">
+                    <a asp-action="Details" asp-route-id="@item.Id" class="vault-card-title">
+                        @item.Title
+                    </a>
+
+                    @if (!string.IsNullOrWhiteSpace(item.Username))
+                    {
+                        <span class="vault-card-username">
+                            <i class="bi bi-person"></i>
+                            <span>@item.Username</span>
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="vault-card-username is-empty">
+                            <i class="bi bi-person"></i>
+                            <span>No username</span>
+                        </span>
+                    }
+
+                    <div class="vault-card-secret">
+                        <i class="bi bi-shield-lock-fill"></i>
+                        <span>@item.MaskedSecret</span>
+                    </div>
+                </div>
+
+                @* ----- Footer: badge + timestamp ----- *@
+                <footer class="vault-card-footer">
+                    <span class="badge badge-category" data-category="@item.Category">
+                        @item.Category
+                    </span>
+                    <span class="updated" title="Last updated">
+                        <i class="bi bi-clock"></i>
+                        @item.UpdatedAt.ToLocalTime().ToString("MMM dd, yyyy")
+                    </span>
+                </footer>
+
+            </article>
+        }
     </div>
 
     @if (Model.TotalPages > 1)
     {
-        const int windowSize = 2;
-        int startPage = Math.Max(1, Model.Page - windowSize);
-        int endPage = Math.Min(Model.TotalPages, Model.Page + windowSize);
-
-        <nav aria-label="Vault pagination" class="mt-3">
-            <ul class="pagination justify-content-center">
+        <nav aria-label="Vault pagination">
+            <ul class="pagination">
 
                 <li class="page-item @(Model.HasPrevious ? "" : "disabled")">
                     <a class="page-link" asp-action="Index" asp-route-search="@Model.Search"
                        asp-route-category="@Model.Category" asp-route-page="@(Model.Page - 1)" aria-label="Previous">
-                        <span aria-hidden="true">&laquo;</span>
+                        <i class="bi bi-chevron-left"></i>
                     </a>
                 </li>
 
@@ -138,7 +179,9 @@ else
                     </li>
                     if (startPage > 2)
                     {
-                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
                     }
                 }
 
@@ -154,7 +197,9 @@ else
                 {
                     if (endPage < Model.TotalPages - 1)
                     {
-                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
                     }
                     <li class="page-item">
                         <a class="page-link" asp-action="Index" asp-route-search="@Model.Search"
@@ -165,15 +210,15 @@ else
                 <li class="page-item @(Model.HasNext ? "" : "disabled")">
                     <a class="page-link" asp-action="Index" asp-route-search="@Model.Search"
                        asp-route-category="@Model.Category" asp-route-page="@(Model.Page + 1)" aria-label="Next">
-                        <span aria-hidden="true">&raquo;</span>
+                        <i class="bi bi-chevron-right"></i>
                     </a>
                 </li>
 
             </ul>
         </nav>
 
-        <p class="text-center text-muted small">
-            Showing <strong>@Model.FirstItemOnPage</strong>-<strong>@Model.LastItemOnPage</strong>
+        <p class="vault-pagination-info">
+            Showing <strong>@Model.FirstItemOnPage</strong>–<strong>@Model.LastItemOnPage</strong>
             of <strong>@Model.TotalCount</strong> items
         </p>
     }

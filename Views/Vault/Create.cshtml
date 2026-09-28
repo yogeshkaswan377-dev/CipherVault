@@ -3,61 +3,313 @@
     ViewData["Title"] = "New Vault Item";
 }
 
-<h1 class="h3 mb-3">New Vault Item</h1>
+<div class="form-page">
 
-<div class="row">
-    <div class="col-lg-7">
-        <form asp-action="Create" method="post" autocomplete="off">
-            <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+    <a asp-action="Index" class="details-back">
+        <i class="bi bi-arrow-left"></i>
+        <span>Back to Vault</span>
+    </a>
 
-            <div class="mb-3">
-                <label asp-for="Title" class="form-label"></label>
-                <input asp-for="Title" class="form-control" />
-                <span asp-validation-for="Title" class="text-danger"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Category" class="form-label"></label>
-                <select asp-for="Category" class="form-select"
-                        asp-items="@(new SelectList(CipherVault.Models.VaultCategory.All))"></select>
-                <span asp-validation-for="Category" class="text-danger"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Username" class="form-label"></label>
-                <input asp-for="Username" class="form-control" />
-                <span asp-validation-for="Username" class="text-danger"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Secret" class="form-label"></label>
-                <input asp-for="Secret" id="Secret" class="form-control" />
-                <span asp-validation-for="Secret" class="text-danger"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Url" class="form-label"></label>
-                <input asp-for="Url" class="form-control" placeholder="https://example.com" />
-                <span asp-validation-for="Url" class="text-danger"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Notes" class="form-label"></label>
-                <textarea asp-for="Notes" rows="4" class="form-control"></textarea>
-                <span asp-validation-for="Notes" class="text-danger"></span>
-            </div>
-
-            <button type="submit" class="btn btn-primary">Save</button>
-            <a asp-action="Index" class="btn btn-link">Cancel</a>
-        </form>
+    <div class="form-page-header">
+        <h1><i class="bi bi-plus-circle"></i> New Vault Item</h1>
+        <span class="subtitle">
+            Secrets are encrypted before they reach the database. Only you can reveal them.
+        </span>
     </div>
 
-    <div class="col-lg-5">
-        <partial name="_PasswordGenerator" />
-    </div>
+    <form asp-action="Create" method="post" autocomplete="off">
+
+        @* ==================== BASIC INFO ==================== *@
+        <section class="form-section">
+            <header class="form-section-header">
+                <span class="form-section-title">
+                    <i class="bi bi-info-circle"></i>
+                    <span>Basic Info</span>
+                </span>
+            </header>
+
+            <div class="form-section-body">
+
+                <div class="form-row-2">
+                    <div>
+                        <label asp-for="Title" class="form-label">
+                            Title <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="Title" class="form-control" placeholder="e.g. GitHub, Bank account" autofocus
+                               maxlength="100" />
+                        <span asp-validation-for="Title" class="text-danger"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="Category" class="form-label">
+                            Category <span class="text-danger">*</span>
+                        </label>
+                        <select asp-for="Category" class="form-select">
+                            <option value="">Select category...</option>
+                            <option value="Password">🔑 Password</option>
+                            <option value="Note">📓 Note</option>
+                            <option value="API Key">🛡️ API Key</option>
+                            <option value="Credit Card">💳 Credit Card</option>
+                            <option value="Other">📁 Other</option>
+                        </select>
+                        <span asp-validation-for="Category" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div>
+                    <label asp-for="Username" class="form-label">Username</label>
+                    <input asp-for="Username" class="form-control" placeholder="Username or email you log in with"
+                           autocomplete="off" maxlength="100" />
+                    <span asp-validation-for="Username" class="text-danger"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Url" class="form-label">URL</label>
+                    <input asp-for="Url" class="form-control" type="url" placeholder="https://example.com"
+                           autocomplete="off" maxlength="500" />
+                    <span asp-validation-for="Url" class="text-danger"></span>
+                </div>
+
+            </div>
+        </section>
+
+        @* ==================== SECRET ==================== *@
+        <section class="form-section">
+            <header class="form-section-header">
+                <span class="form-section-title">
+                    <i class="bi bi-shield-lock-fill"></i>
+                    <span>Secret</span>
+                </span>
+                <span class="badge badge-category" data-category="Password">Encrypted</span>
+            </header>
+
+            <div class="form-section-body">
+
+                <div>
+                    <div class="field-label-row">
+                        <label asp-for="Secret" class="form-label" style="margin: 0;">
+                            Secret value <span class="text-danger">*</span>
+                        </label>
+                    </div>
+
+                    <div class="password-input-wrap">
+                        <input asp-for="Secret" id="secret-input" class="form-control" type="password"
+                               placeholder="Password, API key, card number, or any sensitive value"
+                               autocomplete="new-password" />
+
+                        <button type="button" id="toggle-secret-visibility" class="input-action" title="Show / hide">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+
+                    <span asp-validation-for="Secret" class="text-danger"></span>
+
+                    @* Password strength meter *@
+                    <div class="strength-meter" id="strength-meter" data-strength="0">
+                        <div class="strength-bar">
+                            <div class="strength-segment"></div>
+                            <div class="strength-segment"></div>
+                            <div class="strength-segment"></div>
+                            <div class="strength-segment"></div>
+                        </div>
+                        <div class="strength-label">
+                            <span>Password strength</span>
+                            <span class="strength-value" id="strength-value">—</span>
+                        </div>
+                    </div>
+
+                    @* Generate button row *@
+                    <div class="field-actions" style="margin-top: var(--space-3);">
+                        <button type="button" id="toggle-generator" class="btn btn-outline-light btn-sm">
+                            <i class="bi bi-shuffle"></i> Generate Password
+                        </button>
+                    </div>
+
+                    @* Generator panel *@
+                    <div class="generator-panel" id="generator-panel">
+                        <div class="generator-options">
+                            <div class="generator-length">
+                                <label for="gen-length">Length</label>
+                                <input type="range" id="gen-length" min="8" max="64" value="20" />
+                                <span class="length-value" id="gen-length-value">20</span>
+                            </div>
+
+                            <div class="generator-checks">
+                                <label class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="gen-upper" checked />
+                                    <span class="form-check-label">A-Z</span>
+                                </label>
+                                <label class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="gen-lower" checked />
+                                    <span class="form-check-label">a-z</span>
+                                </label>
+                                <label class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="gen-digits" checked />
+                                    <span class="form-check-label">0-9</span>
+                                </label>
+                                <label class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="gen-symbols" checked />
+                                    <span class="form-check-label">!@@#$%</span>
+                                </label>
+                            </div>
+
+                            <button type="button" id="gen-generate" class="btn btn-primary btn-sm">
+                                <i class="bi bi-shuffle"></i> Generate &amp; Fill
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        @* ==================== NOTES ==================== *@
+        <section class="form-section">
+            <header class="form-section-header">
+                <span class="form-section-title">
+                    <i class="bi bi-journal-text"></i>
+                    <span>Notes</span>
+                </span>
+                <span class="badge badge-category" data-category="Note">Encrypted</span>
+            </header>
+
+            <div class="form-section-body">
+
+                <div>
+                    <div class="field-label-row">
+                        <label asp-for="Notes" class="form-label" style="margin: 0;">
+                            Secure notes <span class="text-muted">(optional)</span>
+                        </label>
+                        <span class="char-counter" id="notes-counter">0 / 2000</span>
+                    </div>
+
+                    <textarea asp-for="Notes" id="notes-input" class="form-control" rows="5"
+                              placeholder="Recovery codes, security answers, or any sensitive text..."
+                              maxlength="2000"></textarea>
+
+                    <span asp-validation-for="Notes" class="text-danger"></span>
+
+                    <div class="field-hint">
+                        <i class="bi bi-shield-lock-fill"></i>
+                        <span>Notes are encrypted at rest — same protection as the Secret field.</span>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        @* ==================== ACTIONS ==================== *@
+        <div class="form-actions">
+            <a asp-action="Index" class="btn btn-ghost">
+                <i class="bi bi-x-lg"></i> Cancel
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg"></i> Create Item
+            </button>
+        </div>
+
+    </form>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/password-generator.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            'use strict';
+
+            // --- Toggle secret visibility ---
+            const secretInput = document.getElementById('secret-input');
+            const toggleBtn = document.getElementById('toggle-secret-visibility');
+            if (secretInput && toggleBtn) {
+                toggleBtn.addEventListener('click', () => {
+                    const isPassword = secretInput.type === 'password';
+                    secretInput.type = isPassword ? 'text' : 'password';
+                    toggleBtn.innerHTML = isPassword
+                        ? '<i class="bi bi-eye-slash"></i>'
+                        : '<i class="bi bi-eye"></i>';
+                });
+            }
+
+            // --- Strength meter ---
+            const meter = document.getElementById('strength-meter');
+            const value = document.getElementById('strength-value');
+
+            function scorePassword(pwd) {
+                if (!pwd) return 0;
+                let score = 0;
+                if (pwd.length >= 8) score++;
+                if (pwd.length >= 12) score++;
+                if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) score++;
+                if (/\d/.test(pwd)) score++;
+                if (/[^A-Za-z0-9]/.test(pwd)) score++;
+                return Math.min(score, 4);
+            }
+
+            const labels = ['—', 'Weak', 'Fair', 'Good', 'Strong'];
+
+            if (secretInput && meter && value) {
+                secretInput.addEventListener('input', () => {
+                    const s = scorePassword(secretInput.value);
+                    meter.setAttribute('data-strength', s);
+                    value.textContent = labels[s];
+                });
+            }
+
+            // --- Generator panel toggle ---
+            const toggleGen = document.getElementById('toggle-generator');
+            const genPanel = document.getElementById('generator-panel');
+            if (toggleGen && genPanel) {
+                toggleGen.addEventListener('click', () => {
+                    genPanel.classList.toggle('is-open');
+                });
+            }
+
+            // --- Length slider ---
+            const slider = document.getElementById('gen-length');
+            const lengthLabel = document.getElementById('gen-length-value');
+            if (slider && lengthLabel) {
+                slider.addEventListener('input', () => {
+                    lengthLabel.textContent = slider.value;
+                });
+            }
+
+            // --- Generate ---
+            const genBtn = document.getElementById('gen-generate');
+            if (genBtn && window.CipherVaultGenerator) {
+                genBtn.addEventListener('click', () => {
+                    const opts = {
+                        length: parseInt(document.getElementById('gen-length').value, 10),
+                        upper: document.getElementById('gen-upper').checked,
+                        lower: document.getElementById('gen-lower').checked,
+                        digits: document.getElementById('gen-digits').checked,
+                        symbols: document.getElementById('gen-symbols').checked
+                    };
+                    const pwd = window.CipherVaultGenerator.generate(opts);
+                    if (!pwd) {
+                        alert('Select at least one character set.');
+                        return;
+                    }
+                    secretInput.value = pwd;
+                    secretInput.type = 'text';
+                    if (toggleBtn) toggleBtn.innerHTML = '<i class="bi bi-eye-slash"></i>';
+                    secretInput.dispatchEvent(new Event('input'));
+                });
+            }
+
+            // --- Notes character counter ---
+            const notesInput = document.getElementById('notes-input');
+            const notesCounter = document.getElementById('notes-counter');
+            if (notesInput && notesCounter) {
+                const update = () => {
+                    const len = notesInput.value.length;
+                    notesCounter.textContent = len + ' / 2000';
+                    notesCounter.classList.toggle('is-warning', len > 1600 && len <= 1900);
+                    notesCounter.classList.toggle('is-danger', len > 1900);
+                };
+                notesInput.addEventListener('input', update);
+                update();
+            }
+        })();
+    </script>
 }

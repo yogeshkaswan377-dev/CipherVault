@@ -2,10 +2,97 @@
     ViewData["Title"] = "Home";
 }
 
-<div class="text-center py-5">
-    <h1 class="display-4">Welcome to CipherVault</h1>
-    <p class="lead">Your personal encrypted password &amp; secure notes manager.</p>
-    <a class="btn btn-primary btn-lg mt-3" asp-controller="Dashboard" asp-action="Index">
-        Go to your Vault
-    </a>
+<div class="home-hero">
+
+    <div class="home-hero-icon">
+        <i class="bi bi-shield-lock-fill"></i>
+    </div>
+
+    <h1>Your secrets, encrypted.</h1>
+
+    <p class="lead">
+        CipherVault is a personal password and secure notes manager.
+        Secrets are encrypted at rest with the ASP.NET Core Data Protection API —
+        only you can reveal them.
+    </p>
+
+    <div class="home-hero-actions">
+        <a asp-controller="Vault" asp-action="Index" class="btn btn-primary btn-lg">
+            <i class="bi bi-key-fill"></i> Open My Vault
+        </a>
+        <a asp-controller="Home" asp-action="About" class="btn btn-outline-light btn-lg">
+            <i class="bi bi-info-circle"></i> Learn More
+        </a>
+    </div>
+
+</div>
+
+<div class="home-features">
+
+    <article class="home-feature">
+        <div class="home-feature-icon">
+            <i class="bi bi-shield-lock-fill"></i>
+        </div>
+        <h3>Encrypted at rest</h3>
+        <p>
+            Secrets and notes are encrypted with the Data Protection API before they
+            touch the database. Metadata remains plaintext to support search.
+        </p>
+    </article>
+
+    <article class="home-feature">
+        <div class="home-feature-icon">
+            <i class="bi bi-eye-slash-fill"></i>
+        </div>
+        <h3>Reveal on demand</h3>
+        <p>
+            Values stay masked by default. Click Reveal to decrypt for the current
+            session — with auto-hide after 30 seconds.
+        </p>
+    </article>
+
+    <article class="home-feature">
+        <div class="home-feature-icon">
+            <i class="bi bi-clipboard-check"></i>
+        </div>
+        <h3>Copy safely</h3>
+        <p>
+            Copy a revealed secret with a single click. Your clipboard clears itself
+            after 10 seconds.
+        </p>
+    </article>
+
+    <article class="home-feature">
+        <div class="home-feature-icon">
+            <i class="bi bi-shuffle"></i>
+        </div>
+        <h3>Generate passwords</h3>
+        <p>
+            Cryptographically secure random generator with a live strength meter.
+            No <code>Math.random()</code>.
+        </p>
+    </article>
+
+    <article class="home-feature">
+        <div class="home-feature-icon">
+            <i class="bi bi-search"></i>
+        </div>
+        <h3>Search &amp; filter</h3>
+        <p>
+            Fast server-side search across titles, usernames, and URLs. Category
+            filter and pagination preserve state.
+        </p>
+    </article>
+
+    <article class="home-feature">
+        <div class="home-feature-icon">
+            <i class="bi bi-code-slash"></i>
+        </div>
+        <h3>REST API</h3>
+        <p>
+            Full CRUD API with JWT bearer authentication. Secrets are never returned
+            via the API.
+        </p>
+    </article>
+
 </div>
