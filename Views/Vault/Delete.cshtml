@@ -62,7 +62,10 @@
                     }
                     <div class="delete-preview-meta">
                         <i class="bi bi-clock"></i>
-                        Last updated @Model.UpdatedAt.ToLocalTime().ToString("MMM dd, yyyy")
+                        Last updated
+                        <time class="js-local-time" datetime="@Model.UpdatedAt.ToString("o")">
+                            @Model.UpdatedAt.ToString("MMM dd, yyyy")
+                        </time>
                     </div>
                 </div>
             </div>

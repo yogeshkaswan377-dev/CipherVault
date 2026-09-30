@@ -27,7 +27,12 @@
                     @Model.Category
                 </span>
                 <span>·</span>
-                <span>Updated @Model.UpdatedAt.ToLocalTime().ToString("MMM dd, yyyy")</span>
+                <span>
+                    Updated
+                    <time class="js-local-time" datetime="@Model.UpdatedAt.ToString("o")">
+                        @Model.UpdatedAt.ToString("MMM dd, yyyy")
+                    </time>
+                </span>
             </span>
         </div>
     </div>
@@ -161,12 +166,20 @@
 
             <li>
                 <span class="meta-label">Created</span>
-                <span class="meta-value">@Model.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy 'at' HH:mm")</span>
+                <span class="meta-value">
+                    <time class="js-local-time" datetime="@Model.CreatedAt.ToString("o")">
+                        @Model.CreatedAt.ToString("MMM dd, yyyy 'at' HH:mm")
+                    </time>
+                </span>
             </li>
 
             <li>
                 <span class="meta-label">Last Updated</span>
-                <span class="meta-value">@Model.UpdatedAt.ToLocalTime().ToString("MMM dd, yyyy 'at' HH:mm")</span>
+                <span class="meta-value">
+                    <time class="js-local-time" datetime="@Model.UpdatedAt.ToString("o")">
+                        @Model.UpdatedAt.ToString("MMM dd, yyyy 'at' HH:mm")
+                    </time>
+                </span>
             </li>
 
         </ul>

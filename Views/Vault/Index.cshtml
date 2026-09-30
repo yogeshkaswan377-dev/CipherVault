@@ -151,7 +151,9 @@ else
                     </span>
                     <span class="updated" title="Last updated">
                         <i class="bi bi-clock"></i>
-                        @item.UpdatedAt.ToLocalTime().ToString("MMM dd, yyyy")
+                        <time class="js-local-time" datetime="@item.UpdatedAt.ToString("o")">
+                            @item.UpdatedAt.ToString("MMM dd, yyyy")
+                        </time>
                     </span>
                 </footer>
 

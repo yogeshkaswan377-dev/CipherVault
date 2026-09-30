@@ -173,7 +173,46 @@
             });
         })();
     </script>
+<script>
+    (function () {
+        'use strict';
 
+        // Defensive ISO parse: if no timezone suffix (Z or +HH:MM) is present,
+        // assume UTC. EF Core's datetime2 returns Kind=Unspecified, so
+        // DateTime.ToString("o") produces no 'Z' — without this, JS would
+        // treat the value as local time and skip the UTC→local conversion.
+        function parseUtc(iso) {
+            if (!iso) return null;
+            if (!/[Zz]$|[+-]\d{2}:?\d{2}$/.test(iso)) {
+                iso = iso + 'Z';
+            }
+            var d = new Date(iso);
+            return isNaN(d.getTime()) ? null : d;
+        }
+
+        function applyLocalTimes() {
+            document.querySelectorAll('time.js-local-time[datetime]').forEach(function (el) {
+                var iso = el.getAttribute('datetime');
+                var d = parseUtc(iso);
+                if (!d) return;
+
+                el.textContent = d.toLocaleString(undefined, {
+                    year:   'numeric',
+                    month:  'short',
+                    day:    '2-digit',
+                    hour:   '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                });
+
+                el.title = iso + ' (UTC)';
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', applyLocalTimes);
+        window.CipherVaultApplyLocalTimes = applyLocalTimes;
+    })();
+</script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -99,7 +99,10 @@
                                 <span class="recent-info">
                                     <span class="recent-title">@item.Title</span>
                                     <span class="recent-meta">
-                                        @item.Category &middot; @item.UpdatedAt.ToLocalTime().ToString("MMM dd")
+                                        @item.Category &middot;
+                                        <time class="js-local-time" datetime="@item.UpdatedAt.ToString("o")">
+                                            @item.UpdatedAt.ToString("MMM dd")
+                                        </time>
                                     </span>
                                 </span>
                                 <i class="bi bi-chevron-right recent-arrow"></i>
